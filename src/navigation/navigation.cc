@@ -73,15 +73,23 @@ Navigation::Navigation(const string& map_file, ros::NodeHandle* n) :
 }
 
 void Navigation::SetNavGoal(const Vector2f& loc, float angle) {
+    nav_goal_loc_ = loc;
+    nav_goal_angle_ = angle;
 }
 
 void Navigation::UpdateLocation(const Eigen::Vector2f& loc, float angle) {
+    robot_loc_ = loc;
+    robot_angle_ = angle;
 }
 
 void Navigation::UpdateOdometry(const Vector2f& loc,
                                 float angle,
                                 const Vector2f& vel,
                                 float ang_vel) {
+    robot_loc_ = loc;
+    robot_angle_ = angle;
+    robot_vel_ = vel;
+    robot_omega_ = ang_vel;
 }
 
 void Navigation::ObservePointCloud(const vector<Vector2f>& cloud,
@@ -89,6 +97,49 @@ void Navigation::ObservePointCloud(const vector<Vector2f>& cloud,
 }
 
 void Navigation::Run() {
+    double t = 1.0/20.0;
+    double v_0 = robot_vel_.x();
+    double v_delta;
+
+    double d = nav_goal_loc_.x() - robot_loc_.x();
+    if (d < 0.0)
+        return;
+    //double stopping_x = (std::pow(curr_v,2)/(-2 * a_min);
+    //double time_to_stop = curr_v/-a_min;
+    // accelerate for 1 step
+    double a_max = 3;
+    double a_min = -3;
+    double v_f = v_0 + a_max*t;
+    double x_1 = t*(v_0 + v_f)/2;
+    double t_2 = v_f/-a_min;
+    double x_2 = t_2*(v_f/2);
+    if (x_1 + x_2 <= d) {
+        v_delta = a_max * t;
+    } else {
+        // cruise for 1 step
+        x_1 = t*v_0;
+        t_2 = v_0/-a_min;
+        x_2 = t_2*(v_0/2);
+        if (x_1 + x_2 <= d) {
+            v_delta = 0;
+        } else {
+            // decelerate for 1 step
+            double a = (std::pow(v_0,2))/(2*d);
+            v_delta = -a * t;
+        }
+    }
+
+    //v_delta = std::min(v_delta, a_max);
+    //v_delta = std::max(v_delta, a_min);
+    double target_v = v_0 + v_delta;
+    double max_v = 1;
+    target_v = std::min(target_v, max_v);
+    target_v = std::max(target_v, 0.0);
+    drive_msg_.velocity = target_v;
+    drive_msg_.curvature = 0;
+    drive_pub_.publish(drive_msg_);
+    //std::cout << robot_loc_.x() << "\n";
+    //std::cout << nav_goal_loc_.x() << "\n";
   // Create Helper functions here
   // Milestone 1 will fill out part of this class.
   // Milestone 3 will complete the rest of navigation.
