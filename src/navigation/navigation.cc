@@ -54,7 +54,10 @@ const float kEpsilon = 1e-5;
 
 namespace navigation {
 
-Navigation::Navigation(const string& map_file, ros::NodeHandle* n) :
+Navigation::Navigation(const string& map_file, const double dist, ros::NodeHandle* n) :
+    dist(dist),
+    start_loc(0, 0),
+    initialized(false),
     robot_loc_(0, 0),
     robot_angle_(0),
     robot_vel_(0, 0),
@@ -86,6 +89,10 @@ void Navigation::UpdateOdometry(const Vector2f& loc,
                                 float angle,
                                 const Vector2f& vel,
                                 float ang_vel) {
+    if (!initialized && loc.x() != 0) {
+        initialized = true;
+        start_loc = loc;
+    }
     robot_loc_ = loc;
     robot_angle_ = angle;
     robot_vel_ = vel;
@@ -101,7 +108,7 @@ void Navigation::Run() {
     double v_0 = robot_vel_.x();
     double v_delta;
 
-    double d = nav_goal_loc_.x() - robot_loc_.x();
+    double d = dist - (robot_loc_.x() - start_loc.x());
     if (d < 0.0)
         return;
     //double stopping_x = (std::pow(curr_v,2)/(-2 * a_min);

@@ -45,7 +45,7 @@ class Navigation {
  public:
 
    // Constructor
-  explicit Navigation(const std::string& map_file, ros::NodeHandle* n);
+  explicit Navigation(const std::string& map_file, const double dist, ros::NodeHandle* n);
 
   // Used in callback from localization to update position.
   void UpdateLocation(const Eigen::Vector2f& loc, float angle);
@@ -67,6 +67,12 @@ class Navigation {
 
  private:
 
+  // Distance to travel
+  double dist;
+  // Start location
+  Eigen::Vector2f start_loc;
+  // initialized
+  bool initialized;
   // Current robot location.
   Eigen::Vector2f robot_loc_;
   // Current robot orientation.
