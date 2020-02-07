@@ -135,7 +135,7 @@ void Navigation::Run() {
     }
 
     double target_v = v_0 + v_delta;
-    double max_v = 1;
+    double max_v = .15;
     target_v = std::min(target_v, max_v);
     target_v = std::max(target_v, 0.0);
     drive_msg_.velocity = target_v;
