@@ -109,10 +109,8 @@ void Navigation::Run() {
     double v_delta;
 
     double d = dist - (robot_loc_.x() - start_loc.x());
-    if (d < 0.0)
+    if (d < 0.0 || initialized == 0)
         return;
-    //double stopping_x = (std::pow(curr_v,2)/(-2 * a_min);
-    //double time_to_stop = curr_v/-a_min;
     // accelerate for 1 step
     double a_max = 3;
     double a_min = -3;
@@ -136,8 +134,6 @@ void Navigation::Run() {
         }
     }
 
-    //v_delta = std::min(v_delta, a_max);
-    //v_delta = std::max(v_delta, a_min);
     double target_v = v_0 + v_delta;
     double max_v = 1;
     target_v = std::min(target_v, max_v);
@@ -145,8 +141,9 @@ void Navigation::Run() {
     drive_msg_.velocity = target_v;
     drive_msg_.curvature = 0;
     drive_pub_.publish(drive_msg_);
-    //std::cout << robot_loc_.x() << "\n";
-    //std::cout << nav_goal_loc_.x() << "\n";
+    std::cout << "robot_vel_:(" << robot_vel_ << ")\n";
+    std::cout << "target_v:" << target_v << "\n";
+    std::cout << "monotime:" << GetMonotonicTime() << "\n\n";
   // Create Helper functions here
   // Milestone 1 will fill out part of this class.
   // Milestone 3 will complete the rest of navigation.
