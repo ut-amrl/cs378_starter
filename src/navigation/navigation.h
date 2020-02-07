@@ -68,6 +68,8 @@ class Navigation {
  private:
 
   // Distance to travel
+  int times_run;
+  // Distance to travel
   double dist;
   // Start location
   Eigen::Vector2f start_loc;

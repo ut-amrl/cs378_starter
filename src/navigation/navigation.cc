@@ -55,6 +55,7 @@ const float kEpsilon = 1e-5;
 namespace navigation {
 
 Navigation::Navigation(const string& map_file, const double dist, ros::NodeHandle* n) :
+    times_run(0),
     dist(dist),
     start_loc(0, 0),
     initialized(false),
@@ -104,40 +105,11 @@ void Navigation::ObservePointCloud(const vector<Vector2f>& cloud,
 }
 
 void Navigation::Run() {
-    double t = 1.0/20.0;
-    double v_0 = robot_vel_.x();
-    double v_delta;
-
-    double d = dist - (robot_loc_.x() - start_loc.x());
-    if (d < 0.0 || initialized == 0)
-        return;
-    // accelerate for 1 step
-    double a_max = 3;
-    double a_min = -3;
-    double v_f = v_0 + a_max*t;
-    double x_1 = t*(v_0 + v_f)/2;
-    double t_2 = v_f/-a_min;
-    double x_2 = t_2*(v_f/2);
-    if (x_1 + x_2 <= d) {
-        v_delta = a_max * t;
-    } else {
-        // cruise for 1 step
-        x_1 = t*v_0;
-        t_2 = v_0/-a_min;
-        x_2 = t_2*(v_0/2);
-        if (x_1 + x_2 <= d) {
-            v_delta = 0;
-        } else {
-            // decelerate for 1 step
-            double a = (std::pow(v_0,2))/(2*d);
-            v_delta = -a * t;
-        }
+    double target_v = 0;
+    if (times_run % 14 < 7) {
+        target_v = 1;
     }
-
-    double target_v = v_0 + v_delta;
-    double max_v = .15;
-    target_v = std::min(target_v, max_v);
-    target_v = std::max(target_v, 0.0);
+    times_run++;
     drive_msg_.velocity = target_v;
     drive_msg_.curvature = 0;
     drive_pub_.publish(drive_msg_);
