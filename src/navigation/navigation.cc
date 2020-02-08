@@ -104,19 +104,13 @@ void Navigation::ObservePointCloud(const vector<Vector2f>& cloud,
                                    double time) {
 }
 
-void Navigation::Run() {
-    double t = 1.0/20.0;
-    double v_0 = robot_vel_.x();
+double Euclid2D(const double x, const double y) {
+    return std::sqrt(std::pow(x, 2) + std::pow(y, 2));
+}
+
+double CalcVDelta(const double v_0, const double t, const double d) {
     double v_delta;
 
-    if (!initialized)
-        return;
-    double x_delta = abs(robot_loc_.x() - start_loc.x());
-    double y_delta = abs(robot_loc_.y() - start_loc.y());
-    dist -= std::sqrt(std::pow(x_delta, 2) + std::pow(y_delta, 2));
-    start_loc = robot_loc_;
-    if (dist < 0.0)
-        return;
     // accelerate for 1 step
     double a_max = 3;
     double a_min = -3;
@@ -124,21 +118,50 @@ void Navigation::Run() {
     double x_1 = t*(v_0 + v_f)/2;
     double t_2 = v_f/-a_min;
     double x_2 = t_2*(v_f/2);
-    if (x_1 + x_2 <= dist) {
+    if (x_1 + x_2 <= d) {
         v_delta = a_max * t;
     } else {
         // cruise for 1 step
         x_1 = t*v_0;
         t_2 = v_0/-a_min;
         x_2 = t_2*(v_0/2);
-        if (x_1 + x_2 <= dist) {
+        if (x_1 + x_2 <= d) {
             v_delta = 0;
         } else {
             // decelerate for 1 step
-            double a = (std::pow(v_0,2))/(2*dist);
+            double a = (v_0 * v_0)/(2*d);
             v_delta = -a * t;
         }
     }
+            v_delta = -a * t;
+        }
+    }
+    return v_delta;
+}
+
+void Navigation::Run() {
+    if (!initialized)
+        return;
+
+    double t = 1.0/20.0;
+    double v_0 = Euclid2D(robot_vel_.x(), robot_vel_.y());
+    double v_delta;
+
+    // subtract off distance travelled last time step
+    double x_delta = abs(robot_loc_.x() - start_loc.x());
+    double y_delta = abs(robot_loc_.y() - start_loc.y());
+    dist -= Euclid2D(x_delta, y_delta);
+    start_loc = robot_loc_;
+
+    if (dist < 0.0)
+        return;
+
+    double d = dist;
+    v_delta = CalcVDelta(v_0, t, d);
+    // account for latency
+    double latency = .05;
+    d = dist - (v_0 +(v_delta)/2) * latency;
+    v_delta = CalcVDelta(v_0, t, d);
 
     double target_v = v_0 + v_delta;
     double max_v = 1;
