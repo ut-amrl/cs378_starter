@@ -54,8 +54,8 @@ const float kEpsilon = 1e-5;
 
 namespace navigation {
 
-Navigation::Navigation(const string& map_file, const double dist, ros::NodeHandle* n) :
-    times_run(0),
+Navigation::Navigation(const string& map_file, const double dist, const double curv, ros::NodeHandle* n) :
+    curv(curv),
     dist(dist),
     start_loc(0, 0),
     initialized(false),
@@ -104,18 +104,62 @@ void Navigation::ObservePointCloud(const vector<Vector2f>& cloud,
                                    double time) {
 }
 
+double 2dEuclid(const double x, const double y) {
+    return std::sqrt(std::pow(x, 2) + std::pow(y, 2));
+}
+
 void Navigation::Run() {
-    double target_v = 0;
-    if (times_run % 14 < 7) {
-        target_v = 1;
+    if (!initialized)
+        return;
+
+    double t = 1.0/20.0;
+    double v_0 = 2dEuclid(robot_vel_.x(), robot_vel_.y());
+    double v_delta;
+
+    // subtract off distance travelled last time step
+    double x_delta = abs(robot_loc_.x() - start_loc.x());
+    double y_delta = abs(robot_loc_.y() - start_loc.y());
+    dist -= 2dEuclid(x_delta, y_delta);
+    start_loc = robot_loc_;
+
+    if (dist < 0.0)
+        return;
+
+    // account for latency
+    double latency = .1
+    double d = dist - v_0 * latency;
+    // accelerate for 1 step
+    double a_max = 3;
+    double a_min = -3;
+    double v_f = v_0 + a_max*t;
+    double x_1 = t*(v_0 + v_f)/2;
+    double t_2 = v_f/-a_min;
+    double x_2 = t_2*(v_f/2);
+    if (x_1 + x_2 <= d) {
+        v_delta = a_max * t;
+    } else {
+        // cruise for 1 step
+        x_1 = t*v_0;
+        t_2 = v_0/-a_min;
+        x_2 = t_2*(v_0/2);
+        if (x_1 + x_2 <= d) {
+            v_delta = 0;
+        } else {
+            // decelerate for 1 step
+            double a = (v_0 * v_0)/(2*d);
+            v_delta = -a * t;
+        }
     }
-    times_run++;
+
+    double target_v = v_0 + v_delta;
+    double max_v = 1;
+    target_v = std::min(target_v, max_v);
+    target_v = std::max(target_v, 0.0);
     drive_msg_.velocity = target_v;
-    drive_msg_.curvature = 0;
+    drive_msg_.curvature = curv;
     drive_pub_.publish(drive_msg_);
-    std::cout << "robot_vel_:(" << robot_vel_ << ")\n";
-    std::cout << "target_v:" << target_v << "\n";
-    std::cout << "monotime:" << GetMonotonicTime() << "\n\n";
+    //std::cout << robot_loc_.x() << "\n";
+    //std::cout << start_loc.x() << "\n";
   // Create Helper functions here
   // Milestone 1 will fill out part of this class.
   // Milestone 3 will complete the rest of navigation.

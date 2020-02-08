@@ -45,7 +45,7 @@ class Navigation {
  public:
 
    // Constructor
-  explicit Navigation(const std::string& map_file, const double dist, ros::NodeHandle* n);
+  explicit Navigation(const std::string& map_file, const double dist, const double curv, ros::NodeHandle* n);
 
   // Used in callback from localization to update position.
   void UpdateLocation(const Eigen::Vector2f& loc, float angle);
@@ -67,8 +67,8 @@ class Navigation {
 
  private:
 
-  // Distance to travel
-  int times_run;
+  // Curvature of path
+  double curv;
   // Distance to travel
   double dist;
   // Start location
