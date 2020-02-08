@@ -111,6 +111,17 @@ double Euclid2D(const double x, const double y) {
 double CalcVDelta(const double v_0, const double t, const double d) {
     double v_delta;
 
+<<<<<<< HEAD
+    if (!initialized)
+        return;
+    double x_delta = abs(robot_loc_.x() - start_loc.x());
+    double y_delta = abs(robot_loc_.y() - start_loc.y());
+    dist -= std::sqrt(std::pow(x_delta, 2) + std::pow(y_delta, 2));
+    start_loc = robot_loc_;
+    if (dist < 0.0)
+        return;
+=======
+>>>>>>> 89de7f1b4359432c9cd58ae2595bdfaae21b134b
     // accelerate for 1 step
     double a_max = 3;
     double a_min = -3;
@@ -118,18 +129,22 @@ double CalcVDelta(const double v_0, const double t, const double d) {
     double x_1 = t*(v_0 + v_f)/2;
     double t_2 = v_f/-a_min;
     double x_2 = t_2*(v_f/2);
-    if (x_1 + x_2 <= d) {
+    if (x_1 + x_2 <= dist) {
         v_delta = a_max * t;
     } else {
         // cruise for 1 step
         x_1 = t*v_0;
         t_2 = v_0/-a_min;
         x_2 = t_2*(v_0/2);
-        if (x_1 + x_2 <= d) {
+        if (x_1 + x_2 <= dist) {
             v_delta = 0;
         } else {
             // decelerate for 1 step
+<<<<<<< HEAD
+            double a = (std::pow(v_0,2))/(2*dist);
+=======
             double a = (v_0 * v_0)/(2*d);
+>>>>>>> 89de7f1b4359432c9cd58ae2595bdfaae21b134b
             v_delta = -a * t;
         }
     }
