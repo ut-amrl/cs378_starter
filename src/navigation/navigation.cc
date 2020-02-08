@@ -104,30 +104,13 @@ void Navigation::ObservePointCloud(const vector<Vector2f>& cloud,
                                    double time) {
 }
 
-double 2dEuclid(const double x, const double y) {
+double Euclid2D(const double x, const double y) {
     return std::sqrt(std::pow(x, 2) + std::pow(y, 2));
 }
 
-void Navigation::Run() {
-    if (!initialized)
-        return;
-
-    double t = 1.0/20.0;
-    double v_0 = 2dEuclid(robot_vel_.x(), robot_vel_.y());
+double CalcVDelta(const double v_0, const double t, const double d) {
     double v_delta;
 
-    // subtract off distance travelled last time step
-    double x_delta = abs(robot_loc_.x() - start_loc.x());
-    double y_delta = abs(robot_loc_.y() - start_loc.y());
-    dist -= 2dEuclid(x_delta, y_delta);
-    start_loc = robot_loc_;
-
-    if (dist < 0.0)
-        return;
-
-    // account for latency
-    double latency = .1
-    double d = dist - v_0 * latency;
     // accelerate for 1 step
     double a_max = 3;
     double a_min = -3;
@@ -150,6 +133,32 @@ void Navigation::Run() {
             v_delta = -a * t;
         }
     }
+    return v_delta;
+}
+
+void Navigation::Run() {
+    if (!initialized)
+        return;
+
+    double t = 1.0/20.0;
+    double v_0 = Euclid2D(robot_vel_.x(), robot_vel_.y());
+    double v_delta;
+
+    // subtract off distance travelled last time step
+    double x_delta = abs(robot_loc_.x() - start_loc.x());
+    double y_delta = abs(robot_loc_.y() - start_loc.y());
+    dist -= Euclid2D(x_delta, y_delta);
+    start_loc = robot_loc_;
+
+    if (dist < 0.0)
+        return;
+
+    double d = dist;
+    v_delta = CalcVDelta(v_0, t, d);
+    // account for latency
+    double latency = .05;
+    d = dist - (v_0 +(v_delta)/2) * latency;
+    v_delta = CalcVDelta(v_0, t, d);
 
     double target_v = v_0 + v_delta;
     double max_v = 1;
