@@ -116,7 +116,7 @@ void Navigation::ObservePointCloud(const vector<Vector2f>& cloud,
         float angle = robot_angle_ + angle_orig;
         Vector2f global_point(range * cos(angle), range * sin(angle));
         global_point += robot_loc_;
-        visualization::DrawCross(global_point, .1, 0xFF0000, local_viz_msg_);
+        visualization::DrawCross(point, .01, 0xFF0000, local_viz_msg_);
     }
     viz_pub_.publish(local_viz_msg_);
 }
@@ -164,10 +164,11 @@ void Navigation::Run() {
     start_loc = robot_loc_;
     dist = 999999.0;
     for (Vector2f point : point_cloud) {
-        if (abs(point.y()) <= .26) {
+        if (abs(point.y()) <= .26)
             dist = std::min(dist, point.x());
-        }
     }
+    dist -= .58;
+    std::cout << dist << "\n";
 
     if (dist < 0.0)
         return;

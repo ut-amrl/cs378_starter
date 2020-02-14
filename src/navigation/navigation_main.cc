@@ -81,7 +81,7 @@ void LaserCallback(const sensor_msgs::LaserScan& msg) {
            GetWallTime() - msg.header.stamp.toSec());
   }
   // Location of the laser on the robot. Assumes the laser is forward-facing.
-  const Vector2f kLaserLoc(0.2, 0);
+  const Vector2f kLaserLoc(0, 0);
 
   vector<Vector2f> point_cloud_;
   // Convert the LaserScan to a point cloud
