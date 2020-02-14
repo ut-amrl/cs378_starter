@@ -57,6 +57,7 @@ namespace navigation {
 Navigation::Navigation(const string& map_file, const double dist, const double curv, ros::NodeHandle* n) :
     curv(curv),
     dist(dist),
+    point_cloud(),
     start_loc(0, 0),
     initialized(false),
     robot_loc_(0, 0),
@@ -100,12 +101,24 @@ void Navigation::UpdateOdometry(const Vector2f& loc,
     robot_omega_ = ang_vel;
 }
 
-void Navigation::ObservePointCloud(const vector<Vector2f>& cloud,
-                                   double time) {
-}
-
 double Euclid2D(const double x, const double y) {
     return std::sqrt(std::pow(x, 2) + std::pow(y, 2));
+}
+
+void Navigation::ObservePointCloud(const vector<Vector2f>& cloud,
+                                   double time) {
+    visualization::ClearVisualizationMsg(local_viz_msg_);
+    point_cloud.clear();
+    for (Vector2f point : cloud) {
+        point_cloud.push_back(point);
+        float range = Euclid2D(point.x(), point.y());
+        float angle_orig = atan2(point.y(), point.x());
+        float angle = robot_angle_ + angle_orig;
+        Vector2f global_point(range * cos(angle), range * sin(angle));
+        global_point += robot_loc_;
+        visualization::DrawCross(global_point, .1, 0xFF0000, local_viz_msg_);
+    }
+    viz_pub_.publish(local_viz_msg_);
 }
 
 double CalcVDelta(const double v_0, const double t, const double d) {
@@ -149,11 +162,17 @@ void Navigation::Run() {
     double y_delta = abs(robot_loc_.y() - start_loc.y());
     dist -= Euclid2D(x_delta, y_delta);
     start_loc = robot_loc_;
+    dist = 999999.0;
+    for (Vector2f point : point_cloud) {
+        if (abs(point.y()) <= .26) {
+            dist = std::min(dist, point.x());
+        }
+    }
 
     if (dist < 0.0)
         return;
 
-    double d = dist;
+    float d = dist;
     v_delta = CalcVDelta(v_0, t, d);
     // account for latency
     double latency = .05;

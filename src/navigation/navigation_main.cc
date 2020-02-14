@@ -83,8 +83,17 @@ void LaserCallback(const sensor_msgs::LaserScan& msg) {
   // Location of the laser on the robot. Assumes the laser is forward-facing.
   const Vector2f kLaserLoc(0.2, 0);
 
-  static vector<Vector2f> point_cloud_;
-  // TODO Convert the LaserScan to a point cloud
+  vector<Vector2f> point_cloud_;
+  // Convert the LaserScan to a point cloud
+  float angle = msg.angle_min;
+  for (unsigned int index = 0; index < msg.ranges.size(); ++index) {
+      float range = msg.ranges[index];
+      Vector2f point(range * cos(angle), range * sin(angle));
+      point += kLaserLoc;
+      point_cloud_.push_back(point);
+      angle += msg.angle_increment;
+  }
+
   navigation_->ObservePointCloud(point_cloud_, msg.header.stamp.toSec());
   last_laser_msg_ = msg;
 }

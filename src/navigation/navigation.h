@@ -70,10 +70,13 @@ class Navigation {
   // Curvature of path
   double curv;
   // Distance to travel
-  double dist;
+  float dist;
+  // Last seen point cloud
+
+  std::vector<Eigen::Vector2f> point_cloud;
   // Start location
   Eigen::Vector2f start_loc;
-  // initialized
+  // To account for initial values being 0
   bool initialized;
   // Current robot location.
   Eigen::Vector2f robot_loc_;
