@@ -157,18 +157,51 @@ void Navigation::Run() {
     double v_0 = Euclid2D(robot_vel_.x(), robot_vel_.y());
     double v_delta;
 
+    double safety_margin = 0.25;
+
+    double radius = 100;
+    if (curv != 0) {
+        radius = abs(1.0/curv);
+    }
+
+
+    double w = 0.14 + safety_margin;
+    double h = 0.43 + safety_margin;
+    double r_1 = radius - w;
+    double r_2 = Euclid2D(radius + w, h);
+
     // subtract off distance travelled last time step
     double x_delta = abs(robot_loc_.x() - start_loc.x());
     double y_delta = abs(robot_loc_.y() - start_loc.y());
     dist -= Euclid2D(x_delta, y_delta);
     start_loc = robot_loc_;
     dist = 999999.0;
+
     for (Vector2f point : point_cloud) {
-        if (abs(point.y()) <= .26)
+        double y_point = point.y();
+
+        // turning right, flip all points over x axis
+        if (curv < 0) {
+            y_point = -point.y();
+        }
+
+        double r_dist = Euclid2D(point.x(), y_point - radius);
+        
+        if (radius < 10 && r_dist >= r_1 && r_dist <= r_2) {
+            
+            double theta = atan2(point.x(), radius - y_point);
+            double omega = atan2(h, radius - w);
+            float curv_dist = radius * abs(theta - omega) - 0.001; 
+            dist = std::min(dist, curv_dist);
+            
+        } else if (radius > 10 && abs(point.y()) <= 0.14 + safety_margin) {
             dist = std::min(dist, point.x());
+            dist -= h;
+        }
     }
-    dist -= .58;
     std::cout << dist << "\n";
+
+
 
     if (dist < 0.0)
         return;
