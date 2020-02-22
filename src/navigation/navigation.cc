@@ -55,10 +55,7 @@ const float kEpsilon = 1e-5;
 namespace navigation {
 
 Navigation::Navigation(const string& map_file, const double dist, const double curv, ros::NodeHandle* n) :
-    curv(curv),
-    dist(dist),
     point_cloud(),
-    start_loc(0, 0),
     initialized(false),
     robot_loc_(0, 0),
     robot_angle_(0),
@@ -93,7 +90,6 @@ void Navigation::UpdateOdometry(const Vector2f& loc,
                                 float ang_vel) {
     if (!initialized && loc.x() != 0) {
         initialized = true;
-        start_loc = loc;
     }
     robot_loc_ = loc;
     robot_angle_ = angle;
@@ -111,14 +107,20 @@ void Navigation::ObservePointCloud(const vector<Vector2f>& cloud,
     point_cloud.clear();
     for (Vector2f point : cloud) {
         point_cloud.push_back(point);
-        float range = Euclid2D(point.x(), point.y());
-        float angle_orig = atan2(point.y(), point.x());
-        float angle = robot_angle_ + angle_orig;
-        Vector2f global_point(range * cos(angle), range * sin(angle));
-        global_point += robot_loc_;
-        visualization::DrawCross(point, .01, 0xFF0000, local_viz_msg_);
+        //Vector2f global_point = globalize_point(point);
+        //visualization::DrawCross(global_point, .01, 0xFF0000, local_viz_msg_);
     }
-    viz_pub_.publish(local_viz_msg_);
+    //viz_pub_.publish(local_viz_msg_);
+}
+
+// TODO: remove this when local visualization is fixed
+Vector2f Navigation::globalize_point(const Vector2f& local_point) {
+    float range = Euclid2D(local_point.x(), local_point.y());
+    float angle_orig = atan2(local_point.y(), local_point.x());
+    float angle = robot_angle_ + angle_orig;
+    Vector2f global_point(range * cos(angle), range * sin(angle));
+    global_point += robot_loc_;
+    return global_point;
 }
 
 double CalcVDelta(const double v_0, const double t, const double d) {
@@ -149,79 +151,140 @@ double CalcVDelta(const double v_0, const double t, const double d) {
     return v_delta;
 }
 
+// Uses local message
+void Navigation::draw_car(const Vector2f& local_point, uint32_t color) {
+    Vector2f p1(local_point.x(), local_point.y() + w);
+    Vector2f p2(local_point.x() + h, local_point.y() + w);
+    Vector2f p3(local_point.x() + h, local_point.y() - w);
+    Vector2f p4(local_point.x(), local_point.y() - w);
+    visualization::DrawLine(globalize_point(p1), globalize_point(p2), color, local_viz_msg_);
+    visualization::DrawLine(globalize_point(p2), globalize_point(p3), color, local_viz_msg_);
+    visualization::DrawLine(globalize_point(p3), globalize_point(p4), color, local_viz_msg_);
+    visualization::DrawLine(globalize_point(p4), globalize_point(p1), color, local_viz_msg_);
+}
+
 void Navigation::Run() {
     if (!initialized)
         return;
 
+    // constants
+    float curv_inc = .2;
+    float dist = 5.0;
+    // relative goal
+    Vector2f goal(dist, 0.0);
+    //visuals
+    visualization::ClearVisualizationMsg(local_viz_msg_);
+    draw_car(Vector2f(0,0), 0xFF0000);
+    visualization::DrawCross(globalize_point(goal), .1, 0xFF0000, local_viz_msg_);
+
+    // evaluate possible paths
+    float best_curv = 0;
+    float best_score = -9999.0;
+    float best_fpl = 0;
+    for (float curv = -1; curv <= 1; curv += curv_inc) {
+        float fpl;
+        float clearance = .2;
+        float goal_dist;
+        Vector2f dest;
+        if (abs(curv) < .05) {
+            fpl = 3;
+            for (Vector2f point : point_cloud)
+                if (abs(point.y()) <= w)
+                    fpl = std::min(fpl, point.x() - h);
+            for (Vector2f point : point_cloud)
+                if (point.x() >= 0 && point.x() <= fpl + h)
+                    clearance = std::min(clearance, abs(point.y()) + w);
+            goal_dist = Euclid2D(abs(fpl - goal.x()), goal.y());
+            dest = Vector2f(fpl, 0);
+        } else {
+            float r = 1/curv;
+
+            Vector2f g(goal.x(), goal.y());
+            // turning right, flip all points over x axis
+            if (r < 0) {
+                r = -r;
+                for (Vector2f point : point_cloud) {
+                    point.y() = -point.y();
+                }
+                g.y() = -g.y();
+            }
+            // Assumes goal is straight ahead dist meters
+            fpl = r * atan2(dist, r);
+            double r_1 = r - w;
+            double r_2 = Euclid2D(r + w, h);
+            double omega = atan2(h, r - w);
+
+            // compute free path length
+            for (Vector2f point : point_cloud) {
+                if (point.x() < 0)
+                    continue;
+                double r_point = Euclid2D(point.x(), point.y() - r);
+                
+                if (r_point >= r_1 && r_point <= r_2) {
+                    double theta = atan2(point.x(), r - point.y());
+                    assert(theta >= 0);
+                    // TODO: why is subtracting constant needed
+                    //float curv_dist = r * (theta - omega) - 0.001; 
+                    float curv_dist = r * (theta - omega); 
+                    if (curv_dist < 0)
+                        continue;
+                    fpl = std::min(fpl, curv_dist);
+                }
+            }
+            for (Vector2f point : point_cloud) {
+                if (point.x() < 0)
+                    continue;
+                double r_point = Euclid2D(point.x(), point.y() - r);
+                double theta = atan2(point.x(), r - point.y());
+                float curv_dist = r * (theta - omega); 
+                if (curv_dist <= fpl && curv_dist >= 0) {
+                    float clear_curr = std::min(r_1 - r_point, r_point - r_2);
+                    clearance = std::min(clearance, clear_curr);
+                }
+            }
+            float rad = fpl / r;
+            float dest_x = r * sin(rad);
+            float dest_y = r - r*cos(rad);
+            dest = Vector2f(dest_x, dest_y);
+            goal_dist = Euclid2D(abs(dest_x - goal.x()), abs(dest_y - goal.y()));
+        }
+        float w1 = .1;
+        float w2 = -.1;
+        float score = fpl + w1*clearance + w2*goal_dist;
+        std::cout << "curv " << curv << " fpl " << fpl << " clearance " << clearance << " goal_dist " << goal_dist << "\n";
+        if (score > best_score) {
+            best_score = score;
+            best_curv = curv;
+            best_fpl = fpl;
+        }
+        visualization::DrawPathOption(curv, fpl, clearance, local_viz_msg_);
+        draw_car(dest, 0xFF00FF);
+    }
+    visualization::DrawPathOption(best_curv, best_fpl, 0, local_viz_msg_);
+    viz_pub_.publish(local_viz_msg_);
+    //if (best_fpl <= 0.01)
+        return;
+    // 1d TOC
     double t = 1.0/20.0;
     double v_0 = Euclid2D(robot_vel_.x(), robot_vel_.y());
     double v_delta;
 
-    double safety_margin = 0.25;
-
-    double radius = 100;
-    if (curv != 0) {
-        radius = abs(1.0/curv);
-    }
-
-
-    double w = 0.14 + safety_margin;
-    double h = 0.43 + safety_margin;
-    double r_1 = radius - w;
-    double r_2 = Euclid2D(radius + w, h);
-
-    // subtract off distance travelled last time step
-    double x_delta = abs(robot_loc_.x() - start_loc.x());
-    double y_delta = abs(robot_loc_.y() - start_loc.y());
-    dist -= Euclid2D(x_delta, y_delta);
-    start_loc = robot_loc_;
-    dist = 999999.0;
-
-    for (Vector2f point : point_cloud) {
-        double y_point = point.y();
-
-        // turning right, flip all points over x axis
-        if (curv < 0) {
-            y_point = -point.y();
-        }
-
-        double r_dist = Euclid2D(point.x(), y_point - radius);
-        
-        if (radius < 10 && r_dist >= r_1 && r_dist <= r_2) {
-            
-            double theta = atan2(point.x(), radius - y_point);
-            double omega = atan2(h, radius - w);
-            float curv_dist = radius * abs(theta - omega) - 0.001; 
-            dist = std::min(dist, curv_dist);
-            
-        } else if (radius > 10 && abs(point.y()) <= 0.14 + safety_margin) {
-            dist = std::min(dist, point.x());
-            dist -= h;
-        }
-    }
-    std::cout << dist << "\n";
-
-
-
-    if (dist < 0.0)
-        return;
-
-    float d = dist;
+    float d = best_fpl;
     v_delta = CalcVDelta(v_0, t, d);
     // account for latency
+    // TODO: have other calculations account for latency as well
     double latency = .05;
-    d = dist - (v_0 +(v_delta)/2) * latency;
+    d = best_fpl - (v_0 +(v_delta)/2) * latency;
     v_delta = CalcVDelta(v_0, t, d);
 
     double target_v = v_0 + v_delta;
     double max_v = 1;
     target_v = std::min(target_v, max_v);
     target_v = std::max(target_v, 0.0);
+
     drive_msg_.velocity = target_v;
-    drive_msg_.curvature = curv;
+    drive_msg_.curvature = best_curv;
     drive_pub_.publish(drive_msg_);
-    //std::cout << robot_loc_.x() << "\n";
-    //std::cout << start_loc.x() << "\n";
   // Create Helper functions here
   // Milestone 1 will fill out part of this class.
   // Milestone 3 will complete the rest of navigation.
