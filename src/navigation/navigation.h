@@ -67,7 +67,7 @@ class Navigation {
 
  private:
 
-  float safety_margin = 0;
+  float safety_margin = 0.10;
   float w = 0.14 + safety_margin;
   float h = 0.43 + safety_margin;
   
@@ -95,7 +95,7 @@ class Navigation {
   // Navigation goal angle.
   float nav_goal_angle_;
   Eigen::Vector2f globalize_point(const Eigen::Vector2f& local_point);
-  void draw_car(const Eigen::Vector2f& local_point, uint32_t color);
+  void draw_car(const Eigen::Vector2f& local_point, uint32_t color, float angle);
 };
 
 }  // namespace navigation

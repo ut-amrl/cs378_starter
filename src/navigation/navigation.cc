@@ -152,8 +152,9 @@ double CalcVDelta(const double v_0, const double t, const double d) {
 }
 
 // Uses local message
-void Navigation::draw_car(const Vector2f& local_point, uint32_t color) {
-    Vector2f p1(local_point.x(), local_point.y() + w);
+void Navigation::draw_car(const Vector2f& local_point, uint32_t color, float angle) {
+    // TODO draw car at angle
+    Vector2f p1(local_point.x(), local_point.y() + w + angle);
     Vector2f p2(local_point.x() + h, local_point.y() + w);
     Vector2f p3(local_point.x() + h, local_point.y() - w);
     Vector2f p4(local_point.x(), local_point.y() - w);
@@ -176,7 +177,7 @@ void Navigation::Run() {
 
     // visuals
     visualization::ClearVisualizationMsg(local_viz_msg_);
-    draw_car(Vector2f(0,0), 0xFF0000);
+    draw_car(Vector2f(0,0), 0xFF0000, 0.0);
     visualization::DrawCross(globalize_point(goal), .1, 0xFF0000, local_viz_msg_);
 
     // evaluate possible paths
@@ -191,6 +192,7 @@ void Navigation::Run() {
         Vector2f dest;
 
         if (abs(curv) < .05) {
+            curv = 0;
             // going straight
             fpl = 3;
             for (Vector2f point : point_cloud)
@@ -244,13 +246,11 @@ void Navigation::Run() {
                     
                     if (r_point >= r_1 && r_point <= r_2 && theta > 0) {
                         // the point is an obstable
-
-                        // TODO: why is subtracting constant needed
-                        float curv_dist = r * (theta - omega) - 0.001; 
-                        //float curv_dist = r * (theta - omega); 
-                        if (curv_dist > 0)
+                        //float curv_dist = r * (theta - omega) - 0.001; 
+                        float curv_dist = r * (theta - omega); 
+                        curv_dist = -curv_dist;
+                        if (curv_dist < -0.05)
                             continue;
-                        curv_dist = abs(curv_dist);
                         fpl = std::min(fpl, curv_dist);
                     }
                 }
@@ -292,11 +292,8 @@ void Navigation::Run() {
                     
                     if (r_point >= r_1 && r_point <= r_2 && theta > 0) {
                         // the point is an obstable
-
-                        // TODO: why is subtracting constant needed
-                        float curv_dist = r * (theta - omega) - 0.001; 
-                        //float curv_dist = r * (theta - omega); 
-                        if (curv_dist < 0)
+                        float curv_dist = r * (theta - omega); 
+                        if (curv_dist < -.05)
                             continue;
                         fpl = std::min(fpl, curv_dist);
                     }
@@ -317,7 +314,6 @@ void Navigation::Run() {
                             clear_curr = r_1 - r_point;
                         }
 
-                        //float clear_curr = std::min(r_1 - r_point, r_point - r_2);
                         clearance = std::min(clearance, clear_curr);
                     }
                 }
@@ -329,8 +325,8 @@ void Navigation::Run() {
             dest = Vector2f(dest_x, dest_y);
             goal_dist = Euclid2D(dest_x - goal.x(), dest_y - goal.y());
         }
-        float w1 = .1;
-        float w2 = -.1;
+        float w1 = .01;
+        float w2 = -.2;
         float score = fpl + w1 * clearance + w2 * goal_dist;
         std::cout << "curv " << curv << " fpl " << fpl << " clearance " << clearance << " goal_dist " << goal_dist << "\n";
         if (score > best_score) {
