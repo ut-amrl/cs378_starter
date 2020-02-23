@@ -224,11 +224,10 @@ void Navigation::Run() {
             // }
             
             // Assumes goal is straight ahead dist meters
-            fpl = abs(r * atan2(dist, r));
-
-            //float w_local = w;
+            fpl = abs(r) * atan2(dist, abs(r));
 
             if (r < 0) {
+                // turning right
                 double r_1 = abs(r + w);
                 double r_2 = Euclid2D(r - w, h);
                 double omega = atan2(h, abs(r + w));
@@ -251,7 +250,8 @@ void Navigation::Run() {
                         //float curv_dist = r * (theta - omega); 
                         if (curv_dist > 0)
                             continue;
-                        fpl = std::min(fpl, abs(curv_dist));
+                        curv_dist = abs(curv_dist);
+                        fpl = std::min(fpl, curv_dist);
                     }
                 }
 
@@ -274,9 +274,8 @@ void Navigation::Run() {
                         clearance = std::min(clearance, clear_curr);
                     }
                 }
-
-
             } else {
+                // turning left
                 double r_1 = r - w;
                 double r_2 = Euclid2D(r + w, h);
                 double omega = atan2(h, r - w);
