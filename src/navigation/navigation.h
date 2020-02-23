@@ -70,6 +70,7 @@ class Navigation {
   float safety_margin = 0;
   float w = 0.14 + safety_margin;
   float h = 0.43 + safety_margin;
+  
   // Last seen point cloud
   std::vector<Eigen::Vector2f> point_cloud;
   // To account for initial values being 0
