@@ -97,20 +97,40 @@ void ParticleFilter::ObserveLaser(const vector<float>& ranges,
 
 void ParticleFilter::ObserveOdometry(const Vector2f& odom_loc,
                                      const float odom_angle) {
+    std::cout << odom_angle << "\n";
     float k1 = 0.1;
     float k2 = 0.1;
     float k3 = 0.1;
     float k4 = 0.1;
     if (odom_initialized_) {
         Vector2f loc_delta = odom_loc - prev_odom_loc_;
+        float r_delta = loc_delta.y()/sin(odom_angle);
         float delta_theta_hat = math_util::AngleDiff(odom_angle, prev_odom_angle_);
-        float delta_x_hat = loc_delta.x();
-        float delta_y_hat = loc_delta.y();
         for (Particle& particle : particles_) {
+            float delta_x_hat = r_delta*cos(particle.angle);
+            float delta_y_hat = r_delta*sin(particle.angle);
             float delta_x = rng_.Gaussian(delta_x_hat, k1*std::sqrt(Sq(delta_x_hat) + Sq(delta_y_hat)) + k2*abs(delta_theta_hat));
             float delta_y = rng_.Gaussian(delta_y_hat, k1*std::sqrt(Sq(delta_x_hat) + Sq(delta_y_hat)) + k2*abs(delta_theta_hat));
             float delta_theta = rng_.Gaussian(delta_theta_hat, k3*std::sqrt(Sq(delta_x_hat) + Sq(delta_y_hat)) + k4*abs(delta_theta_hat));
-            particle.loc += Vector2f(delta_x,delta_y);
+            // Check for collision
+            bool collides = false;
+            Vector2f intersection;
+            Vector2f p1 = particle.loc;
+            Vector2f p2 = particle.loc + Vector2f(delta_x,delta_y);
+            for (geometry::line2f line : map_.lines) {
+                if (line.Intersection(p1, p2, &intersection)) {
+                    collides = true;
+                    break;
+                }
+            }
+
+            if (collides) {
+                //particle.loc = intersection + ((p1 - intersection) * .2);
+                
+            }
+            else
+                particle.loc = p2;
+
             particle.angle += delta_theta;
             particle.weight = 1;
         }
@@ -135,6 +155,7 @@ void ParticleFilter::Initialize(const string& map_file,
     }
     // Is this needed on actual car?
     odom_initialized_ = false;
+    map_.Load(map_file);
 }
 
 void ParticleFilter::GetLocation(Eigen::Vector2f* loc, float* angle) const {
