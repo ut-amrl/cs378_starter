@@ -57,6 +57,7 @@ namespace particle_filter {
 config_reader::ConfigReader config_reader_({"config/particle_filter.lua"});
 
 ParticleFilter::ParticleFilter() :
+    particles_(10),
     prev_odom_loc_(0, 0),
     prev_odom_angle_(0),
     odom_initialized_(false) {}
@@ -96,11 +97,44 @@ void ParticleFilter::ObserveLaser(const vector<float>& ranges,
 
 void ParticleFilter::ObserveOdometry(const Vector2f& odom_loc,
                                      const float odom_angle) {
+    float k1 = 0.1;
+    float k2 = 0.1;
+    float k3 = 0.1;
+    float k4 = 0.1;
+    if (odom_initialized_) {
+        Vector2f loc_delta = odom_loc - prev_odom_loc_;
+        float delta_theta_hat = math_util::AngleDiff(odom_angle, prev_odom_angle_);
+        float delta_x_hat = loc_delta.x();
+        float delta_y_hat = loc_delta.y();
+        for (Particle& particle : particles_) {
+            float delta_x = rng_.Gaussian(delta_x_hat, k1*std::sqrt(Sq(delta_x_hat) + Sq(delta_y_hat)) + k2*abs(delta_theta_hat));
+            float delta_y = rng_.Gaussian(delta_y_hat, k1*std::sqrt(Sq(delta_x_hat) + Sq(delta_y_hat)) + k2*abs(delta_theta_hat));
+            float delta_theta = rng_.Gaussian(delta_theta_hat, k3*std::sqrt(Sq(delta_x_hat) + Sq(delta_y_hat)) + k4*abs(delta_theta_hat));
+            particle.loc += Vector2f(delta_x,delta_y);
+            particle.angle += delta_theta;
+            particle.weight = 1;
+        }
+    } else {
+        odom_initialized_ = true;
+    }
+    prev_odom_loc_ = odom_loc;
+    prev_odom_angle_ = odom_angle;
 }
 
 void ParticleFilter::Initialize(const string& map_file,
                                 const Vector2f& loc,
                                 const float angle) {
+    float k = .25;
+    float k2 = .1;
+    for (Particle& particle : particles_) {
+        float x = rng_.Gaussian(loc.x(), k);
+        float y = rng_.Gaussian(loc.y(), k);
+        particle.loc = Vector2f(x, y);
+        particle.angle = rng_.Gaussian(angle, k2);
+        particle.weight = 1;
+    }
+    // Is this needed on actual car?
+    odom_initialized_ = false;
 }
 
 void ParticleFilter::GetLocation(Eigen::Vector2f* loc, float* angle) const {
