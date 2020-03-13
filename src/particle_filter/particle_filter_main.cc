@@ -111,7 +111,7 @@ void PublishParticles() {
 }
 
 void PublishPredictedScan() {
-  const uint32_t kColor = 0xd67d00;
+  const uint32_t kColor = 0xFF00EC;
   Vector2f robot_loc(0, 0);
   float robot_angle(0);
   particle_filter_.GetLocation(&robot_loc, &robot_angle);
@@ -164,7 +164,7 @@ void PublishVisualization() {
   ClearVisualizationMsg(vis_msg_);
 
   PublishParticles();
-  // PublishPredictedScan();
+  PublishPredictedScan();
   PublishTrajectory();
   visualization_publisher_.publish(vis_msg_);
 }
