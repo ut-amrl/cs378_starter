@@ -17,8 +17,7 @@
   <depend package="roscpp"/>
   <depend package="rosbag"/>
   <depend package="tf"/>
-  <depend package="f1tenth_course"/>
-  <dpend package="amrl_msgs"/>
+  <depend package="amrl_msgs"/>
 
 </package>
 
