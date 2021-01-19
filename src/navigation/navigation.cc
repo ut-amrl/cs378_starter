@@ -42,6 +42,8 @@ using std::vector;
 using namespace math_util;
 using namespace ros_helpers;
 
+DEFINE_double(cp1_distance, 2.5, "Distance to travel for 1D TOC (cp1)");
+
 namespace {
 ros::Publisher drive_pub_;
 ros::Publisher viz_pub_;
@@ -73,23 +75,30 @@ Navigation::Navigation(const string& map_file, ros::NodeHandle* n) :
 }
 
 void Navigation::SetNavGoal(const Vector2f& loc, float angle) {
+    // Update the current navigation target
 }
 
 void Navigation::UpdateLocation(const Eigen::Vector2f& loc, float angle) {
+    // Update the current estimate of the robot's position in the map reference frame.
 }
 
 void Navigation::UpdateOdometry(const Vector2f& loc,
                                 float angle,
                                 const Vector2f& vel,
                                 float ang_vel) {
+    // Update the robot's position in the odometry reference frame.
+    // Update the current estimate of the robot's velocity
 }
 
 void Navigation::ObservePointCloud(const vector<Vector2f>& cloud,
                                    double time) {
+    // This function will be called when the LiDAR sensor on the robot has a new scan.
+    // Here cloud is an array of points observed by the laser sensor, in the sensor's reference frame
+    // This information can be used to detect obstacles in the robot's path.
 }
 
 void Navigation::Run() {
-  
+  // Called every timestep. This will be the main entrypoint of the navigation code, and is responsible for publishing appropriate navitation commands.
 }
 
 }  // namespace navigation
