@@ -30,6 +30,14 @@ void DemoBasics() {
 
   cout << "Print the vector to stdout:\n" << v1 << endl;
 
+  Vector2f v2 = v1 + v1;
+  cout << "Computing v1 + v1:" << endl
+       << "v2 = V1 + v1 =\n" << v2 << endl;
+
+  v2 = 10.0 * v1;
+  cout << "Multiply scalar by vector:" << endl
+       << "v2 = 10.0 * v1 =\n" << v2 << endl;
+
   cout << "Initialize a 2x2 matrix m1." << endl;
   Matrix2f m1;
   m1  << 0, 2,
@@ -37,8 +45,8 @@ void DemoBasics() {
   cout << "m1 = " << endl << m1 << endl;
 
   cout << "Multiply matrix times vector." << endl;
-  Vector2f v2 = m1 * v1;
-  cout << "Resulting vector:\n" << v2 << endl;
+  Vector2f v3 = m1 * v1;
+  cout << "Resulting vector:\n" << v3 << endl;
 }
 
 void DemoRotations() {
