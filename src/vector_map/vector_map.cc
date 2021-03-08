@@ -29,17 +29,18 @@
 #include "eigen3/Eigen/Geometry"
 #include "gflags/gflags.h"
 
-#include "shared/math/geometry.h"
-#include "shared/math/line2d.h"
-#include "shared/math/math_util.h"
-#include "shared/util/timer.h"
+#include "math/geometry.h"
+#include "math/line2d.h"
+#include "math/math_util.h"
+#include "util/timer.h"
 #include "vector_map.h"
 
+using math_util::AngleDist;
 using math_util::AngleMod;
 using math_util::RadToDeg;
 using geometry::Cross;
 using geometry::Line;
-using geometry::line2f;
+using geometry::Line2f;
 using std::string;
 using std::vector;
 using Eigen::Vector2f;
@@ -58,19 +59,19 @@ DEFINE_double(min_line_length,
 namespace vector_map {
 
 void TrimOcclusion(const Vector2f& loc,
-                   const line2f& test_line,
-                   line2f* trim_line_ptr,
-                   vector<line2f>* scene_lines_ptr) {
+                   const Line2f& test_line,
+                   Line2f* trim_line_ptr,
+                   vector<Line2f>* scene_lines_ptr) {
   // return TrimOcclusionInt(loc, test_line, trim_line_ptr, scene_lines_ptr);
   static const bool kDebug = false;
-  line2f& trim_line = *trim_line_ptr;
+  Line2f& trim_line = *trim_line_ptr;
   if (kDebug) {
     printf("%s:\n", __FUNCTION__);
     printf("TestLine: %f,%f %f,%f\n", PRINT_LINE(test_line));
     printf("TrimLine: %f,%f %f,%f\n", PRINT_LINE(trim_line));
     printf("Loc: %f, %f\n", PRINT_VEC2(loc));
   }
-  vector<line2f>& scene_lines = *scene_lines_ptr;
+  vector<Line2f>& scene_lines = *scene_lines_ptr;
   static const float sqeps = 1e-8;
 
   // test_line.p0
@@ -176,7 +177,7 @@ void TrimOcclusion(const Vector2f& loc,
     trim_line.Set(l2_p0, right_section_end);
     // save the unoccluded part of trim_line at its left hand end, if any
     if ((left_section_end - l2_p1).squaredNorm() > sqeps) {
-      scene_lines.push_back(line2f(left_section_end, l2_p1));
+      scene_lines.push_back(Line2f(left_section_end, l2_p1));
     }
   } else if (occlusion0) {
     if (kDebug) printf("Case 5: left end occluded\n");
@@ -196,13 +197,13 @@ void TrimOcclusion(const Vector2f& loc,
 
 void VectorMap::GetSceneLines(const Vector2f& loc,
                               float max_range,
-                              vector<line2f>* lines_list) const {
+                              vector<Line2f>* lines_list) const {
   const float x_min = loc.x() - max_range;
   const float y_min = loc.y() - max_range;
   const float x_max = loc.x() + max_range;
   const float y_max = loc.y() + max_range;
   lines_list->clear();
-  for (const line2f& l : lines) {
+  for (const Line2f& l : lines) {
     if (l.p0.x() < x_min && l.p1.x() < x_min) continue;
     if (l.p0.y() < y_min && l.p1.y() < y_min) continue;
     if (l.p0.x() > x_max && l.p1.x() > x_max) continue;
@@ -215,16 +216,16 @@ void VectorMap::SceneRender(const Vector2f& loc,
                             float max_range,
                             float angle_min,
                             float angle_max,
-                            vector<line2f>* render) const {
+                            vector<Line2f>* render) const {
   static const unsigned int MaxLines = 2000;
   const float eps = Sq(FLAGS_min_line_length);
-  vector<line2f> scene;
-  vector<line2f> lines_list;
+  vector<Line2f> scene;
+  vector<Line2f> lines_list;
   GetSceneLines(loc, max_range, &lines_list);
   render->clear();
 
   for(size_t i = 0; i < lines_list.size() && i < MaxLines; ++i) {
-    line2f cur_line = lines_list[i];
+    Line2f cur_line = lines_list[i];
     // Check if any part of cur_line is unoccluded by present list of lines,
     // as seen from loc.
     for(size_t j = 0; j < scene.size() && cur_line.SqLength() >= eps; ++j) {
@@ -249,20 +250,20 @@ void VectorMap::SceneRender(const Vector2f& loc,
             RadToDeg(angle_min),
             RadToDeg(angle_max));
   }
-  for(const line2f& l : scene) {
+  for(const Line2f& l : scene) {
     if (l.SqLength() > eps) render->push_back(l);
   }
 }
 
 int GetRayIntersection(const Vector2f& loc,
                        const size_t skip_line_idx,
-                       const vector<line2f>& lines_list,
+                       const vector<Line2f>& lines_list,
                        Vector2f* ray_end) {
   Vector2f intersection(0, 0);
   int intersecting_line_idx = -1;
   for (size_t i = 0; i < lines_list.size(); ++i) {
     if (i == skip_line_idx) continue;
-    const line2f& l = lines_list[i];
+    const Line2f& l = lines_list[i];
     if (l.Intersection(loc, *ray_end, &intersection)) {
       *ray_end = intersection;
       intersecting_line_idx = i;
@@ -273,11 +274,11 @@ int GetRayIntersection(const Vector2f& loc,
 
 void VectorMap::RayCast(const Vector2f& loc,
                         float max_range,
-                        vector<line2f>* render) const {
+                        vector<Line2f>* render) const {
   static const float kEpsilon = 1e-4;
 
   // Small optimization: ignore all lines not within max_range.
-  vector<line2f> lines_list;
+  vector<Line2f> lines_list;
   GetSceneLines(loc, max_range, &lines_list);
 
   // NOTE(joydeep): In this function, "iidx" refers to the index of
@@ -289,12 +290,11 @@ void VectorMap::RayCast(const Vector2f& loc,
     int iidx;
     RayCastRay(const Vector2f& ray_end, int iidx) :
         ray_end(ray_end), iidx(iidx) {}
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   };
   // Go through all lines, and check for intersection of rays.
   vector<RayCastRay> ray_cast_rays;
   for (size_t i = 0; i < lines_list.size(); ++i) {
-    const line2f& l = lines_list[i];
+    const Line2f& l = lines_list[i];
     const Vector2f dir = kEpsilon * (l.p1 - l.p0).normalized();
 
     // Add rays from loc to just inside of the line segment.
@@ -323,13 +323,13 @@ void VectorMap::RayCast(const Vector2f& loc,
   if (ray_cast_rays.size() < 2) return;
   for (size_t i = 0; i < ray_cast_rays.size(); ++i) {
     if (ray_cast_rays[i].ray_end != ray_cast_rays[i - 1].ray_end) {
-      render->push_back(line2f(loc, ray_cast_rays[i].ray_end));
+      render->push_back(Line2f(loc, ray_cast_rays[i].ray_end));
     }
   }
 }
 
 
-void ShrinkLine(float distance, line2f* line) {
+void ShrinkLine(float distance, Line2f* line) {
   const float len = line->Length();
   const Vector2f dir = line->Dir();
   if (len < 2.0 * distance) return;
@@ -341,20 +341,18 @@ void VectorMap::Cleanup() {
   const float kShrinkDistance = 1e-4;
   // const float kMinLineLength = 2.0 * kShrinkDistance;
   const float kMinLineLength = 0.05;
-  vector<line2f> new_lines;
+  vector<Line2f> new_lines;
   for (size_t i = 0; i < lines.size(); ++i) {
-    const line2f& l1 = lines[i];
+    const Line2f& l1 = lines[i];
     if (l1.Length() < kMinLineLength) continue;
     // Check if l1 intersects with any line in new lines.
     Vector2f p;
     bool intersection = false;
-    for (const line2f l2 : new_lines) {
+    for (const Line2f& l2 : new_lines) {
       if (l2.Intersection(l1, &p)) {
         const Vector2f shrink = kShrinkDistance * l1.Dir();
-        const line2f a = line2f(l1.p0, p - shrink);
-        const line2f b = line2f(p + shrink, l1.p1);
-        lines.push_back(a);
-        lines.push_back(b);
+        lines.push_back(Line2f(l1.p0, p - shrink));
+        lines.push_back(Line2f(p + shrink, l1.p1));
         intersection = true;
         break;
       }
@@ -363,13 +361,14 @@ void VectorMap::Cleanup() {
     if (!intersection) new_lines.push_back(l1);
   }
 
-  for (line2f& l : new_lines) {
+  for (Line2f& l : new_lines) {
     ShrinkLine(kShrinkDistance, &l);
   }
   lines = new_lines;
 }
 
 void VectorMap::Load(const string& file) {
+  if (file == file_name) return;
   FILE* fid = fopen(file.c_str(), "r");
   if (fid == NULL) {
     fprintf(stderr, "ERROR: Unable to load map %s\n", file.c_str());
@@ -378,18 +377,70 @@ void VectorMap::Load(const string& file) {
   lines.clear();
   float x1(0), y1(0), x2(0), y2(0);
   while (fscanf(fid, "%f,%f,%f,%f", &x1, &y1, &x2, &y2) == 4) {
-    lines.push_back(line2f(Vector2f(x1, y1), Vector2f(x2, y2)));
+    lines.push_back(Line2f(Vector2f(x1, y1), Vector2f(x2, y2)));
   }
   fclose(fid);
-  Cleanup();
+  // Cleanup();
+  printf("Loaded vector map %s with %d lines\n", file.c_str(), int(lines.size()));
   file_name = file;
 }
 
 bool VectorMap::Intersects(const Vector2f& v0, const Vector2f& v1) const {
-  for (const line2f& l : lines) {
+  for (const Line2f& l : lines) {
     if (l.Intersects(v0, v1)) return true;
   }
   return false;
+}
+
+void OrderLineSegments(const Vector2f& loc, vector<Line2f>* lines_ptr) {
+  vector<Line2f>& lines = *lines_ptr;
+  for (size_t i = 0; i < lines.size(); ++i) {
+    Line2f& r = lines[i];
+    const Vector2f p0 = r.p0 - loc;
+    const Vector2f p1 = r.p1 - loc;
+    const float a0 = atan2(p0.y(), p0.x());
+    const float a1 = atan2(p1.y(), p1.x());
+    if (AngleDist(a0, a1) < 0.0001) {
+      lines.erase(lines.begin() + i);
+      if (lines.empty()) break;
+      --i;
+      continue;
+    }
+    const bool wraps_around = fabs(a1 - a0) > M_PI;
+    if ((wraps_around && a0 < a1) ||
+        (!wraps_around && a0 > a1)) {
+      swap(r.p0, r.p1);
+    }
+  }
+}
+
+void VectorMap::GetRayToLineCorrespondences(
+    const Vector2f& sensor_loc,
+    const float angle,
+    const vector<Vector2f>& rays,
+    const float min_range,
+    const float max_range,
+    vector<Line2f>* lines_ptr,
+    vector<int>* line_correspondences) const {
+  // static CumulativeFunctionTimer function_timer_(__FUNCTION__);
+  // CumulativeFunctionTimer::Invocation invoke(&function_timer_);
+  vector<Line2f>& raycast = *lines_ptr;
+  SceneRender(sensor_loc, max_range, -M_PI, M_PI, lines_ptr);
+  // Do the dumb thing for the first cut.
+  OrderLineSegments(sensor_loc, lines_ptr);
+  const Eigen::Matrix2f pose_rotation = Eigen::Rotation2Df(angle).toRotationMatrix();
+  line_correspondences->resize(rays.size());
+  for (size_t i = 0; i < rays.size(); ++i) {
+    const Vector2f r = pose_rotation * rays[i];
+    (*line_correspondences)[i] = -1;
+    for (size_t j = 0; j < raycast.size(); ++j) {
+      if (Cross<float>(raycast[j].p0 - sensor_loc, r) > 0.0f &&
+          Cross<float>(raycast[j].p1 - sensor_loc, r) < 0.0f) {
+        (*line_correspondences)[i] = j;
+        break;
+      }
+    }
+  }
 }
 
 void VectorMap::GetPredictedScan(const Vector2f& loc,
@@ -402,7 +453,7 @@ void VectorMap::GetPredictedScan(const Vector2f& loc,
   static CumulativeFunctionTimer function_timer_(__FUNCTION__);
   CumulativeFunctionTimer::Invocation invoke(&function_timer_);
   vector<float>& scan = *scan_ptr;
-  vector<line2f> raycast;
+  vector<Line2f> raycast;
   SceneRender(loc, range_max, angle_min, angle_max, &raycast);
   scan.resize(num_rays);
   std::fill(scan.begin(), scan.end(), range_max);
@@ -410,20 +461,20 @@ void VectorMap::GetPredictedScan(const Vector2f& loc,
     return;
   }
   struct LineCast {
-    line2f line;
+    Line2f line;
     float a0;
     float a1;
     bool wraps_around;
   };
   vector<LineCast> line_cast;
   for (size_t i = 0; i < raycast.size(); ++i) {
-    const line2f& r = raycast[i];
+    const Line2f& r = raycast[i];
     LineCast l;
     l.line.p0 = r.p0 - loc;
     l.line.p1 = r.p1 - loc;
     l.a0 = atan2(l.line.p0.y(), l.line.p0.x());
     l.a1 = atan2(l.line.p1.y(), l.line.p1.x());
-    if (fabs(l.a0 - l.a1) < 0.0001) continue;
+    if (AngleDist(l.a0, l.a1) < 0.0001) continue;
     l.wraps_around = fabs(l.a1 - l.a0) > M_PI;
     if ((l.wraps_around && l.a0 < l.a1) ||
         (!l.wraps_around && l.a0 > l.a1)) {

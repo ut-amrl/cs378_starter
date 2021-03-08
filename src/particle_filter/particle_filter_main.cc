@@ -52,7 +52,7 @@
 #include "visualization/visualization.h"
 
 using amrl_msgs::VisualizationMsg;
-using geometry::line2f;
+using geometry::Line2f;
 using geometry::Line;
 using math_util::DegToRad;
 using math_util::RadToDeg;
@@ -65,6 +65,8 @@ using visualization::DrawArc;
 using visualization::DrawPoint;
 using visualization::DrawLine;
 using visualization::DrawParticle;
+
+const string kAmrlMapsDir = ros::package::getPath("amrl_maps");
 
 // Create command line arguements
 DEFINE_string(laser_topic, "/scan", "Name of ROS topic for LIDAR data");
@@ -92,6 +94,15 @@ VisualizationMsg vis_msg_;
 sensor_msgs::LaserScan last_laser_msg_;
 vector_map::VectorMap map_;
 vector<Vector2f> trajectory_points_;
+
+string MapNameToFile(const string& map) {
+  if (kAmrlMapsDir.empty()) {
+    printf("ERROR: amrl_maps directory not found: make sure it is in your"
+           "ROS_PACKAGE_PATH\n");
+    exit(1);
+  }
+  return (kAmrlMapsDir + "/" + map + "/" + map + ".vectormap.txt");
+}
 
 void InitializeMsgs() {
   std_msgs::Header header;
@@ -210,7 +221,8 @@ void InitCallback(const amrl_msgs::Localization2DMsg& msg) {
          init_loc.x(),
          init_loc.y(),
          RadToDeg(init_angle));
-  particle_filter_.Initialize(map, init_loc, init_angle);
+  const string map_file = MapNameToFile(map);
+  particle_filter_.Initialize(map_file, init_loc, init_angle);
   trajectory_points_.clear();
 }
 
@@ -250,7 +262,7 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "particle_filter", ros::init_options::NoSigintHandler);
   ros::NodeHandle n;
   InitializeMsgs();
-  map_ = vector_map::VectorMap(CONFIG_map_name_);
+  map_ = vector_map::VectorMap(MapNameToFile(CONFIG_map_name_));
 
   visualization_publisher_ =
       n.advertise<VisualizationMsg>("visualization", 1);

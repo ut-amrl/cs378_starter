@@ -28,7 +28,6 @@
 
 #include "eigen3/Eigen/Dense"
 #include "eigen3/Eigen/Geometry"
-#include "glog/logging.h"
 #include "math/math_util.h"
 
 using std::sqrt;
@@ -59,8 +58,8 @@ T Cross(const Eigen::Matrix<T, 2, 1>& v1, const Eigen::Matrix<T, 2, 1>& v2) {
   return (v1.x() * v2.y() - v2.x() * v1.y());
 }
 
-template <typename T>
-Eigen::Matrix<T, 2, 1> GetNormalizedOrZero(const Eigen::Matrix<T, 2, 1>& vec) {
+template <typename T, int N>
+Eigen::Matrix<T, N, 1> GetNormalizedOrZero(const Eigen::Matrix<T, N, 1>& vec) {
   const auto norm = vec.template lpNorm<1>();
   if (norm == 0) {
     return vec;
@@ -69,8 +68,8 @@ Eigen::Matrix<T, 2, 1> GetNormalizedOrZero(const Eigen::Matrix<T, 2, 1>& vec) {
   }
 }
 
-template <typename T>
-T GetNormOrZero(const Eigen::Matrix<T, 2, 1>& vec) {
+template <typename T, int N>
+T GetNormOrZero(const Eigen::Matrix<T, N, 1>& vec) {
   const auto norm = vec.template lpNorm<1>();
   if (norm == T(0)) {
     return 0;
@@ -183,41 +182,54 @@ bool CheckLineLineCollision(
     return false;
   }
 
+  const bool a1a0_is_point = (a1a0 == Eigen::Matrix<T, 2, 1>::Zero());
+  const bool b1b0_is_point = (b1b0 == Eigen::Matrix<T, 2, 1>::Zero());
+
+  if (a1a0_is_point && b1b0_is_point) {
+    if (a1 == b1) {
+      return true;
+    }
+  }
+
   // Colinear.
-  const T a1a0_dot_b0a0 = a1a0.dot(b0a0);
-  if (a1a0_dot_b0a0 >= 0 && a1a0_dot_b0a0 <= a1a0.squaredNorm()) {
-    return true;
-  }
-  const T a0a1_dot_b0a1 = a0a1.dot(b0a1);
-  if (a0a1_dot_b0a1 >= 0 && a0a1_dot_b0a1 <= a0a1.squaredNorm()) {
-    return true;
+  if (!a1a0_is_point) {
+    const T a1a0_dot_b0a0 = a1a0.dot(b0a0);
+    if (a1a0_dot_b0a0 >= 0 && a1a0_dot_b0a0 <= a1a0.squaredNorm()) {
+      return true;
+    }
+    const T a0a1_dot_b0a1 = a0a1.dot(b0a1);
+    if (a0a1_dot_b0a1 >= 0 && a0a1_dot_b0a1 <= a0a1.squaredNorm()) {
+      return true;
+    }
+
+    const T a1a0_dot_b1a0 = a1a0.dot(b1a0);
+    if (a1a0_dot_b1a0 >= 0 && a1a0_dot_b1a0 <= a1a0.squaredNorm()) {
+      return true;
+    }
+    const T a0a1_dot_b1a1 = a0a1.dot(b1a1);
+    if (a0a1_dot_b1a1 >= 0 && a0a1_dot_b1a1 <= a0a1.squaredNorm()) {
+      return true;
+    }
   }
 
-  const T a1a0_dot_b1a0 = a1a0.dot(b1a0);
-  if (a1a0_dot_b1a0 >= 0 && a1a0_dot_b1a0 <= a1a0.squaredNorm()) {
-    return true;
-  }
-  const T a0a1_dot_b1a1 = a0a1.dot(b1a1);
-  if (a0a1_dot_b1a1 >= 0 && a0a1_dot_b1a1 <= a0a1.squaredNorm()) {
-    return true;
-  }
+  if (!b1b0_is_point) {
+    const T b1b0_dot_a0b0 = b1b0.dot(a0b0);
+    if (b1b0_dot_a0b0 >= 0 && b1b0_dot_a0b0 <= b1b0.squaredNorm()) {
+      return true;
+    }
+    const T b0b1_dot_a0b1 = b0b1.dot(a0b1);
+    if (b0b1_dot_a0b1 >= 0 && b0b1_dot_a0b1 <= b0b1.squaredNorm()) {
+      return true;
+    }
 
-  const T b1b0_dot_a0b0 = b1b0.dot(a0b0);
-  if (b1b0_dot_a0b0 >= 0 && b1b0_dot_a0b0 <= b1b0.squaredNorm()) {
-    return true;
-  }
-  const T b0b1_dot_a0b1 = b0b1.dot(a0b1);
-  if (b0b1_dot_a0b1 >= 0 && b0b1_dot_a0b1 <= b0b1.squaredNorm()) {
-    return true;
-  }
-
-  const T b1b0_dot_a1b0 = b1b0.dot(a1b0);
-  if (b1b0_dot_a1b0 >= 0 && b1b0_dot_a1b0 <= b1b0.squaredNorm()) {
-    return true;
-  }
-  const T b0b1_dot_a1b1 = b0b1.dot(a1b1);
-  if (b0b1_dot_a1b1 >= 0 && b0b1_dot_a1b1 <= b0b1.squaredNorm()) {
-    return true;
+    const T b1b0_dot_a1b0 = b1b0.dot(a1b0);
+    if (b1b0_dot_a1b0 >= 0 && b1b0_dot_a1b0 <= b1b0.squaredNorm()) {
+      return true;
+    }
+    const T b0b1_dot_a1b1 = b0b1.dot(a1b1);
+    if (b0b1_dot_a1b1 >= 0 && b0b1_dot_a1b1 <= b0b1.squaredNorm()) {
+      return true;
+    }
   }
   return false;
 }
@@ -312,6 +324,25 @@ void ProjectPointOntoLineSegment(const Eigen::Matrix<T, 2, 1>& point,
 
   *projected_point = vertex_a + scalar_projection * line_segment;
   *squared_distance = (point - (*projected_point)).squaredNorm();
+}
+
+// Closest distance of a point from a line segment.
+template <typename T>
+T DistanceFromLineSegment(
+    const Eigen::Matrix<T, 2, 1>& point,
+    const Eigen::Matrix<T, 2, 1>& vertex_a,
+    const Eigen::Matrix<T, 2, 1>& vertex_b) {
+  Eigen::Matrix<T, 2, 1> dir = (vertex_b - vertex_a);
+  const T l = dir.norm();
+  dir = dir / l;
+  const T c = dir.dot(point - vertex_a);
+  if (c < T(0)) {
+    return (point - vertex_a).norm();
+  } else if (c > l) {
+    return (point - vertex_b).norm();
+  }
+  const Eigen::Matrix<T, 2, 1> n = Perp(dir);
+  return fabs(n.dot(point - vertex_a));
 }
 
 // Project a given point onto a line segment.
@@ -461,6 +492,56 @@ T MinDistanceLineLine(const Eigen::Matrix<T, 2, 1>& a0,
   const auto min_diff_sq =
       std::min({a0_diff_sq, a1_diff_sq, b0_diff_sq, b1_diff_sq});
   return std::sqrt(min_diff_sq);
+}
+
+// Compute point(s) of intersection between the circle with center c0 and radius
+// r, and the line segment p0 : p1. The return value indicates the number of
+// valid points of intersection found: 0, 1, or 2. The points of intersection
+// are returned via r0 and r1.
+template <typename T>
+int CircleLineIntersection(const Eigen::Matrix<T, 2, 1>& c0,
+                           const T& r,
+                           const Eigen::Matrix<T, 2, 1>& p0,
+                           const Eigen::Matrix<T, 2, 1>& p1,
+                           Eigen::Matrix<T, 2, 1>* r0,
+                           Eigen::Matrix<T, 2, 1>* r1) {
+  Eigen::Matrix<T, 2, 1> d = p1 - p0;
+  const T l = d.norm();
+  d = d / l;
+  const Eigen::Matrix<T, 2, 1> delta = p0 - c0;  
+  const T b = T(2) * delta.dot(d);
+  const T c = delta.squaredNorm() - math_util::Sq(r);
+  T gamma_0;
+  T gamma_1;
+  const int num_solutions = 
+      math_util::SolveQuadratic(T(1), b, c, &gamma_0, &gamma_1);
+  if (num_solutions == 0) return 0;
+  bool s0_valid =  (gamma_0 >= T(0) && gamma_0 <= l);
+  bool s1_valid = (num_solutions > 1 && gamma_1 >= T(0) && gamma_1 <= l);
+  if (!s0_valid && s1_valid) {
+    s0_valid = true;
+    gamma_0 = gamma_1;
+    s1_valid = false;
+  }
+  if (s0_valid) {
+    *r0 = p0 + gamma_0 * d;
+  }
+  if (s1_valid) {
+    *r1 = p0 + gamma_1 * d;
+  }
+  return static_cast<int>(s0_valid) + static_cast<int>(s1_valid);
+}
+// Check if the circle with center c0, and radius r collides with the line
+// segment p0 : p1, and return true if a collision is found.
+template <typename T>
+bool CheckCircleLineCollision(const Eigen::Matrix<T, 2, 1>& c0,
+                              const T& r,
+                              const Eigen::Matrix<T, 2, 1>& p0,
+                              const Eigen::Matrix<T, 2, 1>& p1) {
+  if ((c0 - p0).squaredNorm() <= math_util::Sq(r)) return true;
+  if ((c0 - p1).squaredNorm() <= math_util::Sq(r)) return true;
+  if (DistanceFromLineSegment(c0, p0, p1) <= r) return true;
+  return false;
 }
 
 // Check if line segment collides min and max angle on a circle, moving in a

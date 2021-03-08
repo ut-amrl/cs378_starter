@@ -36,7 +36,7 @@
 
 #include "vector_map/vector_map.h"
 
-using geometry::line2f;
+using geometry::Line2f;
 using std::cout;
 using std::endl;
 using std::string;
@@ -86,10 +86,11 @@ void ParticleFilter::GetPredictedPointCloud(const Vector2f& loc,
   // The line segments in the map are stored in the `map_.lines` variable. You
   // can iterate through them as:
   for (size_t i = 0; i < map_.lines.size(); ++i) {
-    const line2f map_line = map_.lines[i];
-    // The line2f class has helper functions that will be useful.
+    /*
+    const Line2f map_line = map_.lines[i];
+    // The Line2f class has helper functions that will be useful.
     // You can create a new line segment instance as follows, for :
-    line2f my_line(1, 2, 3, 4); // Line segment from (1,2) to (3.4).
+    Line2f my_line(1, 2, 3, 4); // Line segment from (1,2) to (3.4).
     // Access the end points using `.p0` and `.p1` members:
     printf("P0: %f, %f P1: %f,%f\n", 
            my_line.p0.x(),
@@ -110,6 +111,7 @@ void ParticleFilter::GetPredictedPointCloud(const Vector2f& loc,
     } else {
       printf("No intersection\n");
     }
+    */
   }
 }
 
@@ -174,6 +176,7 @@ void ParticleFilter::Initialize(const string& map_file,
   // The "set_pose" button on the GUI was clicked, or an initialization message
   // was received from the log. Initialize the particles accordingly, e.g. with
   // some distribution around the provided location and angle.
+  map_.Load(map_file);
 }
 
 void ParticleFilter::GetLocation(Eigen::Vector2f* loc_ptr, 

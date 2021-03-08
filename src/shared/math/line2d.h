@@ -26,6 +26,7 @@
 #include "eigen3/Eigen/Geometry"
 
 #include "math/geometry.h"
+#include "math/math_util.h"
 
 #ifndef LINE2D_H
 #define LINE2D_H
@@ -40,8 +41,8 @@ struct Line {
   Vector2T p0;
   Vector2T p1;
   Line() {}
-  Line(const Vector2T& p0,
-       const Vector2T& p1) : p0(p0), p1(p1) {}
+  Line(const Vector2T p0,
+       const Vector2T p1) : p0(p0), p1(p1) {}
   Line(const T& x0, const T& y0, const T& x1, const T& y1) :
       p0(x0, y0), p1(x1, y1) {}
 
@@ -68,23 +69,22 @@ struct Line {
   }
 
   T ClosestApproach(const Vector2T& p2, const Vector2T& p3) const {
-    const Vector2T d = Dir();
-    const T l = Length();
-    const Vector2T p20 = p2 - p0;
-    const Vector2T p30 = p3 - p0;
-    const T p2d = d.dot(p20);
-    const T p3d = d.dot(p30);
-    if (p2d <= T(0) && p3d <= T(0)) {
-      return std::min<T>(p20.norm(), p30.norm());
-    } else if (p2d >= l && p3d >= l) {
-      return std::min<T>((p2 - p1).norm(), (p3 - p1).norm());
-    }
-    const Vector2T n = UnitNormal();
-    return std::min<T>(std::abs<T>(n.dot(p20)), std::abs<T>(n.dot(p30)));
+    return geometry::MinDistanceLineLine(p0, p1, p2, p3);
   }
 
   T ClosestApproach(const Line<T>& l) const {
     return ClosestApproach(l.p0, l.p1);
+  }
+
+  T Distance(const Vector2T& p) const {
+    const Vector2T dir = Dir();
+    const T x = dir.dot(p - p0);
+    if (x <= T(0)) {
+      return (p - p0).norm();
+    } else if (math_util::Sq(x) > (p1 - p0).squaredNorm()) {
+      return (p - p1).norm();
+    }
+    return std::abs<T>(geometry::Perp(dir).dot(p - p0));
   }
 
   bool CloserThan(const Vector2T& p2,
@@ -172,6 +172,11 @@ struct Line {
     return Crosses(l2.p0, l2.p1);
   }
 
+  Vector2T Projection(const Vector2T& p) const {
+    const Vector2T dir = Dir();
+    return p0 + dir * dir.dot(p - p0);
+  }
+
   bool RayIntersects(const Vector2T& p, const Vector2T& dir) const {
     Vector2T v0 = p0 - p;
     Vector2T v1 = p1 - p;
@@ -197,9 +202,9 @@ struct Line {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
-typedef Line<float> line2f;
-typedef Line<double> line2d;
-typedef Line<int> line2i;
+typedef Line<float> Line2f;
+typedef Line<double> Line2d;
+typedef Line<int> Line2i;
 
 }  // namespace geometry
 
