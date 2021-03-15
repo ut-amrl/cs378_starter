@@ -27,7 +27,7 @@ MESSAGE(STATUS "CXX Flags: ${CMAKE_CXX_FLAGS}")
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-SET(libs roslib roscpp rosbag glog gflags amrl-shared-lib boost_system lua5.1
+SET(libs roslib roscpp rosbag glog gflags amrl_shared_lib boost_system lua5.1
     pthread)
 
 ADD_LIBRARY(shared_library
