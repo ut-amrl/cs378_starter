@@ -46,6 +46,8 @@
 #include "shared/util/timer.h"
 #include "shared/ros/ros_helpers.h"
 
+#include "std_msgs/String.h"
+
 #include "navigation.h"
 
 using amrl_msgs::Localization2DMsg;
@@ -68,7 +70,7 @@ DEFINE_string(loc_topic, "localization", "Name of ROS topic for localization");
 DEFINE_string(init_topic,
               "initialpose",
               "Name of ROS topic for initialization");
-DEFINE_string(map_file, "~/amrl_maps/GDC1/GDC1.vectormap.txt", "Path to map file");
+DEFINE_string(map, "GDC1", "Name of vector map file");
 
 bool run_ = true;
 sensor_msgs::LaserScan last_laser_msg_;
@@ -85,6 +87,13 @@ void LaserCallback(const sensor_msgs::LaserScan& msg) {
 
   static vector<Vector2f> point_cloud_;
   // TODO Convert the LaserScan to a point cloud
+  // The LaserScan parameters are accessible as follows:
+  // msg.angle_increment // Angular increment between subsequent rays
+  // msg.angle_max // Angle of the first ray
+  // msg.angle_min // Angle of the last ray
+  // msg.range_max // Maximum observable range
+  // msg.range_min // Minimum observable range
+  // msg.ranges[i] // The range of the i'th ray
   navigation_->ObservePointCloud(point_cloud_, msg.header.stamp.toSec());
   last_laser_msg_ = msg;
 }
@@ -130,7 +139,7 @@ int main(int argc, char** argv) {
   // Initialize ROS.
   ros::init(argc, argv, "navigation", ros::init_options::NoSigintHandler);
   ros::NodeHandle n;
-  navigation_ = new Navigation(FLAGS_map_file, &n);
+  navigation_ = new Navigation(FLAGS_map, &n);
 
   ros::Subscriber velocity_sub =
       n.subscribe(FLAGS_odom_topic, 1, &OdometryCallback);

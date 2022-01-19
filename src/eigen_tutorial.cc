@@ -14,6 +14,7 @@ using std::cos;
 using Eigen::Vector2f;
 using Eigen::Matrix2f;
 using Eigen::Rotation2Df;
+using Eigen::Affine2f;
 
 void DemoBasics() {
   cout << "Basic initialization" << endl;
@@ -75,6 +76,7 @@ int main() {
 
   cout << "\n\n\nDifferent representations of rotation.\n";
   DemoRotations();
-
+  Affine2f a = Eigen::Rotation2Df(0.3 * M_PI) * Eigen::Translation2f(3, 4);
+  cout << "a:\n" << a.matrix() << "\n";
   return 0;
 }

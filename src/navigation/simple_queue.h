@@ -33,7 +33,7 @@ template<class Value, class Priority>
 class SimpleQueue {
  private:
   public:
-  // Insert a new value, with the specified priority. If the value
+  // Insert a new value, with the specified priority (cost). If the value
   // already exists, its priority is updated.
   void Push(const Value& v, const Priority& p) {
     for (auto& x : values_) {
@@ -64,15 +64,15 @@ class SimpleQueue {
     sort(values_.begin(), values_.end(), comparator);
   }
 
-  // Retreive the value with the highest priority.
+  // Retreive the value with the highest priority (lowest cost).
   Value Pop() {
     if (values_.empty()) {
       fprintf(stderr, "ERROR: Pop() called on an empty queue!\n");
       exit(1);
     }
     Sort();
-    const Value v = values_.back().first;
-    values_.resize(values_.size() - 1);
+    const Value v = values_.front().first;
+    values_.erase(values_.begin(), values_.begin() + 1);
     return v;
   }
 
