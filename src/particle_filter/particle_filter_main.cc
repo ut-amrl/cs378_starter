@@ -240,7 +240,7 @@ void ProcessLive(ros::NodeHandle* n) {
       OdometryCallback);
   particle_filter_.Initialize(
       GetMapFileFromName(current_map_),
-      Vector2f(CONFIG_init_x_, CONFIG_init_x_),
+      Vector2f(CONFIG_init_x_, CONFIG_init_y_),
       DegToRad(CONFIG_init_r_));
   while (ros::ok() && run_) {
     ros::spinOnce();
