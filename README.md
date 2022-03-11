@@ -1,3 +1,5 @@
+[![Test Status](https://github.com/ut-amrl/cs378_starter/actions/workflows/buildTest.yml/badge.svg)](https://github.com/ut-amrl/cs378_starter/actions)
+
 # cs378_starter
 
 ## Using this Repo
