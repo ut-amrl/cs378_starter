@@ -14,7 +14,7 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v2
-    - name Build docker image
+    - name: Build docker image
       run: make buildcontainer
     - name: Build
       run: make docker_all
