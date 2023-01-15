@@ -13,10 +13,14 @@ build_type=Release
 # build_type=Debug
 
 .SILENT:
-all:
-	docker run --rm --volume "$(shell pwd)":/workspace/cs378_starter cs378_starter bash -lc "cd cs378_starter && make compile -j"
+all: build/CMakeLists.txt.copy
+	$(info Build_type is [${build_type}])
+	$(MAKE) --no-print-directory -C build
 
-shell:
+docker_all: buildcontainer
+	docker run --rm --volume "$(shell pwd)":/workspace/cs378_starter cs378_starter bash -lc "cd cs378_starter && make -j"
+
+shell: buildcontainer
 	if [ $(shell docker ps -a -f name=cs378_starter_shell | wc -l) -ne 2 ]; then docker run -dit --name cs378_starter_shell --volume "$(shell pwd)":/workspace/cs378_starter --workdir /workspace/cs378_starter -p 10272:10272 cs378_starter; fi
 	docker exec -it cs378_starter_shell bash -l
 
@@ -24,9 +28,8 @@ stop:
 	docker container stop cs378_starter_shell
 	docker container rm cs378_starter_shell
 
-compile: build/CMakeLists.txt.copy
-	$(info Build_type is [${build_type}])
-	$(MAKE) --no-print-directory -C build
+buildcontainer:
+	docker build -q -t cs378_starter .
 
 # Sets the build type to Debug.
 set_debug:
