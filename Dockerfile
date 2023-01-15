@@ -1,0 +1,38 @@
+FROM ros:noetic
+
+# install apt deps
+RUN apt-get update && \
+    apt-get install -y git libgflags-dev libpopt-dev \
+                       libgoogle-glog-dev liblua5.1-0-dev \
+                       libboost-all-dev libqt5websockets5-dev \
+                       python-is-python3 libeigen3-dev
+
+# install ros apt deps
+RUN apt-get install -y ros-noetic-tf ros-noetic-angles
+RUN rosdep update
+
+# clone deps
+WORKDIR /workspace
+RUN git clone https://github.com/ut-amrl/amrl_maps.git && \
+    git clone https://github.com/ut-amrl/amrl_msgs.git && \
+    git clone https://github.com/ut-amrl/ut_automata.git --recurse-submodules
+
+# set up .bashrc
+SHELL ["/bin/bash", "-l", "-c"]
+RUN echo -e "source /opt/ros/noetic/setup.bash\n" \
+"export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:/workspace/ut_automata\n" \
+"export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:/workspace/cs378_starter\n" \
+"export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:/workspace/amrl_maps\n" \
+"export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:/workspace/amrl_msgs" >> /root/.profile
+RUN echo -e "source /opt/ros/noetic/setup.bash\n" \
+"export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:/workspace/ut_automata\n" \
+"export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:/workspace/cs378_starter\n" \
+"export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:/workspace/amrl_maps\n" \
+"export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:/workspace/amrl_msgs" >> /root/.bashrc
+
+
+# build deps
+# RUN cat /root/.profile
+RUN source /root/.profile && echo $ROS_PACKAGE_PATH
+RUN source /root/.profile && cd /workspace/amrl_msgs && make -j
+RUN source /root/.profile && cd /workspace/ut_automata && make -j
