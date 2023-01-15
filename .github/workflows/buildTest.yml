@@ -15,6 +15,6 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v2
     - name: Build docker image
-      run: make buildcontainer
+      run: make build_container
     - name: Build
       run: make docker_all
