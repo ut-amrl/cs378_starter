@@ -1,4 +1,5 @@
-[![Test Status](https://github.com/ut-amrl/cs378_starter/actions/workflows/buildTest.yml/badge.svg)](https://github.com/ut-amrl/cs378_starter/actions)
+[![Build Test](https://github.com/ut-amrl/cs378_starter/actions/workflows/buildTest.yml/badge.svg)](https://github.com/ut-amrl/cs378_starter/actions/workflows/buildTest.yml)
+[![Docker Build Test](https://github.com/ut-amrl/cs378_starter/actions/workflows/docker_buildTest.yml/badge.svg)](https://github.com/ut-amrl/cs378_starter/actions/workflows/docker_buildTest.yml)
 
 # cs378_starter
 
