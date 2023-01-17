@@ -19,7 +19,7 @@ Please follow the instructions in the UT AUTOmata [reference manual](https://dri
 2. Make sure you have added the path to the cloned directory in your `~/.profile`.
 3. `make -j`
 
-### Building/Running with Docker
+### Optional: Building/Running with Docker
 1. Make sure you have Docker installed and set up.
 2. Make sure you are in the root directory of the repository.
 3. Run `make docker_all` to just compile. You can run `make shell` to get a shell within the Docker container. Inside this shell, you can build with `make -j`, as well as run other utilities such as `roscore` and the `ut_automata` websocket and simulator.

@@ -17,21 +17,21 @@ all: build/CMakeLists.txt.copy
 	$(info Build_type is [${build_type}])
 	$(MAKE) --no-print-directory -C build
 
-docker_all: build_container_q
+docker_all: docker_build_q
 	docker run --rm --volume "$(shell pwd)":/home/dev/cs378_starter cs378_starter bash -lc "cd cs378_starter && make -j"
 
-shell: build_container_q
+docker_shell: docker_build_q
 	if [ $(shell docker ps -a -f name=cs378_starter_shell | wc -l) -ne 2 ]; then docker run -dit --name cs378_starter_shell --volume "$(shell pwd)":/home/dev/cs378_starter --workdir /home/dev/cs378_starter -p 10272:10272 cs378_starter; fi
 	docker exec -it cs378_starter_shell bash -l
 
-stop:
+docker_stop:
 	docker container stop cs378_starter_shell
 	docker container rm cs378_starter_shell
 
-build_container:
+docker_build:
 	docker build --build-arg HOST_UID=$(shell id -u) -t cs378_starter .
 
-build_container_q:
+docker_build_q:
 	docker build -q --build-arg HOST_UID=$(shell id -u) -t cs378_starter .
 
 # Sets the build type to Debug.
