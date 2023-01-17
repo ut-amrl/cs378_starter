@@ -1,0 +1,20 @@
+name: Dockerized Build-Test
+# Run this workflow every time a new commit pushed to your repository
+on: push
+
+jobs:
+  # Set the job key. The key is displayed as the job name
+  # when a job name is not provided
+  build-test:
+    # Name the Job
+    name: Build test
+    # Set the type of machine to run on
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+    - name: Build docker image
+      run: make docker_build
+    - name: Build
+      run: make docker_all
