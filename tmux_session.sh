@@ -9,21 +9,50 @@ fi
 
 session="ROS"
 
-INSTALL_PATH=$1
-if [ -z "${INSTALL_PATH}" ]
+tmux has-session -t $session > /dev/null 2>&1
+RUNNING=$?
+
+ARG=$1
+if [[ "${ARG}" == "stop" ]]
 then
-    INSTALL_PATH="${HOME}/"
+    if [ $RUNNING -ne 0 ]
+    then
+        echo "tmux session is not running."
+        exit 0
+    fi
+    
+    echo "Killing running tmux session"
+    tmux kill-session -t $session > /dev/null 2>&1
+    exit 0
 fi
 
-# check for /  at the end
-if [ ${INSTALL_PATH: -1} != '/' ]
+if [ $RUNNING -eq 0 ]
 then
-    INSTALL_PATH="${INSTALL_PATH}/"
+    echo "ERROR: tmux session is already running. Kill current session with ./tmux_session.sh stop"
+    exit 127
+fi
+
+
+if [ "${ARG}" == "-d" ]
+then
+    INSTALL_PATH=$2
+    if [ -z "${INSTALL_PATH}" ]
+    then
+        INSTALL_PATH="${HOME}/"
+    fi
+
+    # check for /  at the end
+    if [ ${INSTALL_PATH: -1} != '/' ]
+    then
+        INSTALL_PATH="${INSTALL_PATH}/"
+    fi
+else
+    INSTALL_PATH="${HOME}/"
 fi
 
 if ! [[ -d "${INSTALL_PATH}ut_automata" ]]
 then
-    echo "${INSTALL_PATH}ut_automata does not exist, please provide a valid path"
+    echo "${INSTALL_PATH}ut_automata does not exist, please provide a valid path using ./tmux_session.sh -d <INSTALL_PATH>"
     exit 127
 fi
 
