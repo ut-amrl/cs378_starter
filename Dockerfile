@@ -5,7 +5,10 @@ RUN apt-get update && \
     apt-get install -y git libgflags-dev libpopt-dev \
                        libgoogle-glog-dev liblua5.1-0-dev \
                        libboost-all-dev libqt5websockets5-dev \
-                       python-is-python3 libeigen3-dev sudo
+                       python-is-python3 libeigen3-dev sudo 
+
+# multiplexers to run roscore and other infra in background
+RUN apt-get install -y tmux
 
 # install ros apt deps
 RUN apt-get install -y ros-noetic-tf ros-noetic-angles
@@ -37,4 +40,10 @@ RUN echo -e "source /opt/ros/noetic/setup.bash\n" \
 
 # build deps
 RUN source ~/.profile && cd amrl_msgs && make -j
-RUN source ~/.profile && cd ut_automata && make -j
+RUN source ~/.profile && cd ut_automata && make 
+
+# add launcher
+COPY --chown=dev:dev ./tmux_session.sh /home/dev/tmux_session.sh
+RUN chmod u+x /home/dev/tmux_session.sh
+CMD [ "/home/dev/tmux_session.sh" ]
+ENTRYPOINT [ "/bin/bash" ]
