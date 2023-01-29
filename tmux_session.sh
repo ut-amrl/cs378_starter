@@ -10,9 +10,21 @@ fi
 session="ROS"
 
 INSTALL_PATH=$1
-if [ $INSTALL_PATH -eq ""]
+if [ -z "${INSTALL_PATH}" ]
 then
     INSTALL_PATH="${HOME}/"
+fi
+
+# check for /  at the end
+if [ ${INSTALL_PATH: -1} != '/' ]
+then
+    INSTALL_PATH="${INSTALL_PATH}/"
+fi
+
+if ! [[ -d "${INSTALL_PATH}ut_automata" ]]
+then
+    echo "${INSTALL_PATH}ut_automata does not exist, please provide a valid path"
+    exit 127
 fi
 
 tmux new-session -d -s $session 
