@@ -42,4 +42,7 @@ window=2
 tmux new-window -t $session:$window -n 'websocket'
 tmux send-keys -t $session:$window "cd ${INSTALL_PATH}/ut_automata && ./bin/websocket" C-m
 
-/bin/bash
+if ! [ -z ${CS378_DOCKER_CONTEXT+x} ]
+then
+    /bin/bash
+fi
