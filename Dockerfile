@@ -43,6 +43,7 @@ RUN source ~/.profile && cd amrl_msgs && make -j
 RUN source ~/.profile && cd ut_automata && make 
 
 # add launcher
+ENV CS378_DOCKER_CONTEXT 1
 COPY --chown=dev:dev ./tmux_session.sh /home/dev/tmux_session.sh
 RUN chmod u+x /home/dev/tmux_session.sh
 CMD [ "/home/dev/tmux_session.sh" ]
