@@ -5,10 +5,7 @@ RUN apt-get update && \
     apt-get install -y git libgflags-dev libpopt-dev \
                        libgoogle-glog-dev liblua5.1-0-dev \
                        libboost-all-dev libqt5websockets5-dev \
-                       python-is-python3 libeigen3-dev sudo 
-
-# multiplexers to run roscore and other infra in background
-RUN apt-get install -y tmux
+                       python-is-python3 libeigen3-dev sudo tmux
 
 # install ros apt deps
 RUN apt-get install -y ros-noetic-tf ros-noetic-angles
@@ -47,4 +44,4 @@ ENV CS378_DOCKER_CONTEXT 1
 COPY --chown=dev:dev ./tmux_session.sh /home/dev/tmux_session.sh
 RUN chmod u+x /home/dev/tmux_session.sh
 CMD [ "/home/dev/tmux_session.sh" ]
-ENTRYPOINT [ "/bin/bash" ]
+ENTRYPOINT [ "/bin/bash", "-l", "-c" ]
