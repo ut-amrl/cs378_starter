@@ -46,7 +46,7 @@ void DrawLine(const Eigen::Vector2f& p0,
               uint32_t color,
               amrl_msgs::VisualizationMsg& msg);
 
-//Add text at the specified location.
+// Add text at the specified location.
 void DrawText(const Eigen::Vector2f& p, uint32_t color, float size, std::string message, amrl_msgs::VisualizationMsg& msg);
 
 // Add a "X" to the visualization message.
