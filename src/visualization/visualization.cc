@@ -20,10 +20,6 @@
 */
 //========================================================================
 
-// Anand's Notes:
-// msg - you can either use local_viz_msg or global_viz_msg_
-// vizualizations - at every time step you erase the previous viz and add the new one
-
 #include <algorithm>
 #include <string>
 
@@ -65,7 +61,7 @@ void ClearVisualizationMsg(VisualizationMsg& msg) {
   msg.points.clear();
   msg.lines.clear();
   msg.arcs.clear();
-  msg.messages.clear();
+  msg.text_annotations.clear();
 }
 
 // Return new visualization message, with initialized headers and namespace.
