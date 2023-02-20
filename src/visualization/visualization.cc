@@ -98,7 +98,7 @@ void DrawText(const Vector2f& p, uint32_t color, float size, std::string message
   text.color = color;
   text.text = message;
   text.size_em = size;
-  msg.messages.push_back(text);
+  msg.text_annotations.push_back(text);
 }
 
 void DrawCross(const Eigen::Vector2f& location,
