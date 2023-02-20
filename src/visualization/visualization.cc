@@ -28,6 +28,7 @@
 #include "amrl_msgs/ColoredArc2D.h"
 #include "amrl_msgs/ColoredLine2D.h"
 #include "amrl_msgs/ColoredPoint2D.h"
+#include "amrl_msgs/ColoredText.h"
 #include "amrl_msgs/VisualizationMsg.h"
 #include "ros/ros.h"
 
@@ -38,6 +39,7 @@ using Eigen::Vector2f;
 using amrl_msgs::ColoredArc2D;
 using amrl_msgs::ColoredLine2D;
 using amrl_msgs::ColoredPoint2D;
+using amrl_msgs::ColoredText;
 using amrl_msgs::Pose2Df;
 using amrl_msgs::VisualizationMsg;
 using std::max;
@@ -59,6 +61,7 @@ void ClearVisualizationMsg(VisualizationMsg& msg) {
   msg.points.clear();
   msg.lines.clear();
   msg.arcs.clear();
+  msg.text_annotations.clear();
 }
 
 // Return new visualization message, with initialized headers and namespace.
@@ -87,6 +90,15 @@ void DrawLine(const Vector2f& p0,
   SetPoint(p1, &line.p1);
   line.color = color;
   msg.lines.push_back(line);
+}
+
+void DrawText(const Vector2f& p, uint32_t color, float size, std::string message, VisualizationMsg& msg) {
+  ColoredText text;
+  SetPoint(p, &text.start);
+  text.color = color;
+  text.text = message;
+  text.size_em = size;
+  msg.text_annotations.push_back(text);
 }
 
 void DrawCross(const Eigen::Vector2f& location,
