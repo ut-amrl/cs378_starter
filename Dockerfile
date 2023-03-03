@@ -1,4 +1,4 @@
-FROM ros:noetic
+FROM registry.hub.docker.com/library/ros:noetic
 
 # install apt deps
 RUN apt-get update && \
@@ -22,13 +22,12 @@ RUN git clone https://github.com/ut-amrl/amrl_maps.git && \
     git clone https://github.com/ut-amrl/ut_automata.git --recurse-submodules
 
 # set up .bashrc
-SHELL ["/bin/bash", "-l", "-c"]
-RUN echo -e "source /opt/ros/noetic/setup.bash\n" \
+RUN echo "source /opt/ros/noetic/setup.sh\n" \
 "export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:~/ut_automata\n" \
 "export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:~/cs378_starter\n" \
 "export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:~/amrl_maps\n" \
 "export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:~/amrl_msgs" >> ~/.profile
-RUN echo -e "source /opt/ros/noetic/setup.bash\n" \
+RUN echo "source /opt/ros/noetic/setup.bash\n" \
 "export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:~/ut_automata\n" \
 "export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:~/cs378_starter\n" \
 "export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:~/amrl_maps\n" \
@@ -36,5 +35,5 @@ RUN echo -e "source /opt/ros/noetic/setup.bash\n" \
 
 
 # build deps
-RUN source ~/.profile && cd amrl_msgs && make -j
-RUN source ~/.profile && cd ut_automata && make -j
+RUN /bin/bash -lc "cd amrl_msgs && make -j"
+RUN /bin/bash -lc "cd ut_automata && make -j"
