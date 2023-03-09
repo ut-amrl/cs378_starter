@@ -35,8 +35,8 @@ RUN echo "source /opt/ros/noetic/setup.bash\n" \
 
 
 # build deps
-RUN /bin/bash -lc "cd amrl_msgs && make -j"
-RUN /bin/bash -lc "cd ut_automata && make -j"
+RUN /bin/bash -lc "cd amrl_msgs && make"
+RUN /bin/bash -lc "cd ut_automata && make"
 
 # add launcher
 ENV CS378_DOCKER_CONTEXT 1
