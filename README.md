@@ -23,4 +23,8 @@ Please follow the instructions in the UT AUTOmata [reference manual](https://dri
 ### Optional: Building/Running with Docker
 1. Make sure you have Docker installed and set up.
 2. Make sure you are in the root directory of the repository.
-3. Run `make docker_all` to just compile. You can run `make docker_shell` to get a shell within the Docker container. Inside this shell, you can build with `make -j`, as well as run other utilities such as `roscore` and the `ut_automata` websocket and simulator.
+3. Run `make docker_all` to just compile. 
+4. You can run `make docker_shell` to get a shell within the Docker container. The shell will automatically launch `roscore` and the `ut_automata` websocket and simulator inside of a `tmux` session. Inside the shell, you can compile and run your navigation code and connect using localhost in the web visualization. 
+
+For debugging purposes, you can look at the tmux processes at any time by attaching to the session: `tmux a -t ROS`. For more information about `tmux`, refer to the [tmux documentation](https://tmuxguide.readthedocs.io/en/latest/tmux/tmux.html)
+5. To shutdown the docker container, run `make docker_stop`

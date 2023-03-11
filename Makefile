@@ -18,7 +18,7 @@ all: build/CMakeLists.txt.copy
 	$(MAKE) --no-print-directory -C build
 
 docker_all: docker_build_q
-	docker run --rm --volume "$(shell pwd)":/home/dev/cs378_starter cs378_starter bash -lc "cd cs378_starter && make -j"
+	docker run --rm --volume "$(shell pwd)":/home/dev/cs378_starter cs378_starter "cd cs378_starter && make -j"
 
 docker_shell: docker_build_q
 	if [ $(shell docker ps -a -f name=cs378_starter_shell | wc -l) -ne 2 ]; then docker run -dit --name cs378_starter_shell --volume "$(shell pwd)":/home/dev/cs378_starter --workdir /home/dev/cs378_starter -p 10272:10272 cs378_starter; fi
