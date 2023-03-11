@@ -22,7 +22,7 @@ RUN git clone https://github.com/ut-amrl/amrl_maps.git && \
     git clone https://github.com/ut-amrl/ut_automata.git --recurse-submodules
 
 # set up .bashrc
-RUN echo "source /opt/ros/noetic/setup.bash\n" \
+RUN echo "source /opt/ros/noetic/setup.sh\n" \
 "export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:~/ut_automata\n" \
 "export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:~/cs378_starter\n" \
 "export ROS_PACKAGE_PATH=\$ROS_PACKAGE_PATH:~/amrl_maps\n" \
