@@ -8,7 +8,7 @@ then
 fi
 
 
-session="ROS"
+# session="ROS"
 
 tmux has-session -t $session > /dev/null 2>&1
 RUNNING=$?
