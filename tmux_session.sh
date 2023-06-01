@@ -7,6 +7,7 @@ then
     exit 127
 fi
 
+
 session="ROS"
 
 tmux has-session -t $session > /dev/null 2>&1
@@ -20,7 +21,7 @@ then
         echo "tmux session is not running."
         exit 0
     fi
-    
+
     echo "Killing running tmux session"
     tmux kill-session -t $session > /dev/null 2>&1
     exit 0
@@ -56,7 +57,7 @@ then
     exit 127
 fi
 
-tmux new-session -d -s $session 
+tmux new-session -d -s $session
 tmux set mouse on
 window=0
 
